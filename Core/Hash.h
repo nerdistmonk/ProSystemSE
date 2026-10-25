@@ -25,7 +25,7 @@
 #ifndef HASH_H
 #define HASH_H
 
-#include <String>
+#include <string>
 
 typedef unsigned char byte;
 typedef unsigned short word;

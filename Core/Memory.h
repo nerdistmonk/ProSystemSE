@@ -25,7 +25,9 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 #define MEMORY_SIZE 65536
+#ifndef NULL
 #define NULL 0
+#endif
 
 #include "Equates.h"
 #include "Bios.h"

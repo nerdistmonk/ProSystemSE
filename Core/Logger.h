@@ -24,31 +24,37 @@
 // ----------------------------------------------------------------------------
 #ifndef LOGGER_H
 #define LOGGER_H
+
 #define LOGGER_LEVEL_DEBUG 0
 #define LOGGER_LEVEL_INFO 1
 #define LOGGER_LEVEL_ERROR 2
+
+#ifndef _MAX_PATH
+#define _MAX_PATH 260
+#endif
+
+#ifndef NULL
 #define NULL 0
+#endif
 
-#include <Stdio.h>
-#include <String>
-#include <Time.h>
-#include "Windows.h"
+#include <cstdio>
+#include <string>
+#include <ctime>
 #include "Resource.h"
-
 
 typedef unsigned char byte;
 typedef unsigned short word;
 typedef unsigned int uint;
 
-extern bool logger_Initialize( );
+extern bool logger_Initialize();
 extern bool logger_Initialize(std::string filename);
 extern void logger_LogError(std::string message, std::string source);
 extern void logger_LogError(int message, std::string source);
 extern void logger_LogInfo(std::string message, std::string source);
 extern void logger_LogInfo(int message, std::string source);
 extern void logger_LogDebug(std::string message, std::string source);
-extern void logger_LogDebug(int, std::string source);
-extern void logger_Release( );
+extern void logger_LogDebug(int message, std::string source);
+extern void logger_Release();
 extern byte logger_level;
 
 #endif

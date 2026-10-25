@@ -24,10 +24,15 @@
 // ----------------------------------------------------------------------------
 #ifndef PRO_SYSTEM_H
 #define PRO_SYSTEM_H
-#define NULL 0
 
-#include <String>
-#include <Stdio.h>
+#ifndef NULL
+#ifndef NULL
+#define NULL 0
+#endif
+#endif
+
+#include <string>
+#include <cstdio>
 #include "Equates.h"
 #include "Bios.h"
 #include "Cartridge.h"

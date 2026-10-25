@@ -36,10 +36,12 @@
 #define CARTRIDGE_CONTROLLER_LIGHTGUN 2
 #define CARTRIDGE_WSYNC_MASK 2
 #define CARTRIDGE_CYCLE_STEALING_MASK 1
+#ifndef NULL
 #define NULL 0
+#endif
 
-#include <Stdio.h>
-#include <String>
+#include <cstdio>
+#include <string>
 #include "Equates.h"
 #include "Memory.h"
 #include "Hash.h"

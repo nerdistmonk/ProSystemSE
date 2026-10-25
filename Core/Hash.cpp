@@ -200,34 +200,34 @@ std::string hash_Compute(const byte* source, uint length) {
   *ptr++ = 0x80;
 
   count = 63 - count;
-
-  if(count < 8) {
-    uint index;
-    for(index = 0; index < count; index++) {
-      ptr[index] = 0;
-    }
-	  hash_Transform(buffer1, (uint*)buffer3);
-    
-    for(index = 0; index < 56; index++) {
-      buffer3[index] = 0;
-    }
-  } 
-  else {
-    for(index = 0; index < count - 8; index++) {
-      ptr[index] = 0;
-    }
-  }
-
-  ((uint*)buffer3)[14] = buffer2[0];
-  ((uint*)buffer3)[15] = buffer2[1];
-
-  hash_Transform(buffer1, (uint*)buffer3);
   
-  byte digest[16];
-  byte* bufferptr = (byte*)buffer1;
-  for(index = 0; index < 16; index++) {
-    digest[index] = bufferptr[index];
-  }
+  uint index = 0;
+    if(count < 8) {
+      for(index = 0; index < count; index++) {
+        ptr[index] = 0;
+      }
+      hash_Transform(buffer1, (uint*)buffer3);
+     
+      for(index = 0; index < 56; index++) {
+        buffer3[index] = 0;
+      }
+    }   
+    else {
+      for(index = 0; index < count - 8; index++) {
+        ptr[index] = 0;
+      }
+    }
+  
+    ((uint*)buffer3)[14] = buffer2[0];
+    ((uint*)buffer3)[15] = buffer2[1];
+  
+    hash_Transform(buffer1, (uint*)buffer3);
+     
+    byte digest[16];
+    byte* bufferptr = (byte*)buffer1;
+    for(index = 0; index < 16; index++) {
+      digest[index] = bufferptr[index];
+    }
 
   char buffer[33] = {0};
   sprintf(buffer, "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x", digest[0], digest[1], digest[2], digest[3], digest[4], digest[5], digest[6], digest[7], digest[8], digest[9], digest[10], digest[11], digest[12], digest[13], digest[14], digest[15]);

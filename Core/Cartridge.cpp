@@ -94,10 +94,10 @@ static void cartridge_ReadHeader(const byte* header) {
   }
   cartridge_title = temp;
   
-  cartridge_size  = header[49] << 32;
-  cartridge_size |= header[50] << 16;
-  cartridge_size |= header[51] << 8;
-  cartridge_size |= header[52];
+cartridge_size  = static_cast<uint>(header[49]) << 24;
+cartridge_size |= static_cast<uint>(header[50]) << 16;
+cartridge_size |= static_cast<uint>(header[51]) << 8;
+cartridge_size |= static_cast<uint>(header[52]);
 
   if(header[53] == 0) {
     if(cartridge_size > 131072) {
@@ -165,10 +165,10 @@ if (cartridge_CC2(header)) {
   else {
     cartridge_size = size;
   }
-  
+
   cartridge_buffer = new byte[cartridge_size];
-  for(index = 0; index < cartridge_size; index++) {
-    cartridge_buffer[index] = data[index + offset];
+  for(uint index = 0; index < cartridge_size; index++) {
+      cartridge_buffer[index] = data[index + offset];
   }
   
   cartridge_digest = hash_Compute(cartridge_buffer, cartridge_size);

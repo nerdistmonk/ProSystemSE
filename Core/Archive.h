@@ -25,11 +25,14 @@
 #ifndef ARCHIVE_H
 #define ARCHIVE_H
 
-#include <String>
+#include <string>
 #include "Logger.h"
 #include "Cartridge.h"
-#include "Zip.h"
-#include "Unzip.h"
+
+extern "C" {
+#include "zip.h"
+#include "unzip.h"
+}
 
 typedef unsigned char byte;
 typedef unsigned short word;

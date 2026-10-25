@@ -87,11 +87,11 @@ bool logger_Initialize(std::string filename) {
 // LogError //////////
 // ----------------------------------------------------------------------------
 void logger_LogError(int message, std::string source) {
-  if(logger_level == LOGGER_LEVEL_ERROR || logger_level == LOGGER_LEVEL_INFO || logger_level == LOGGER_LEVEL_DEBUG) {
-	LoadString(GetModuleHandle(NULL),message, a, 180);
-	std::string b(a);
-    logger_Log(b, LOGGER_LEVEL_ERROR, source);
-  }
+    if(logger_level == LOGGER_LEVEL_ERROR || logger_level == LOGGER_LEVEL_INFO || logger_level == LOGGER_LEVEL_DEBUG) {
+        snprintf(a, sizeof(a), "Error Code %d", message);
+        std::string b(a);
+        logger_Log(b, LOGGER_LEVEL_ERROR, source);
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -108,11 +108,11 @@ void logger_LogError(std::string message, std::string source) {
 // LogInfo
 // ----------------------------------------------------------------------------
 void logger_LogInfo(int message, std::string source) {
-  if(logger_level == LOGGER_LEVEL_INFO || logger_level == LOGGER_LEVEL_DEBUG) {
-	LoadString(GetModuleHandle(NULL),message, a, 180);
-		std::string b(a);
-    logger_Log(b, LOGGER_LEVEL_INFO, source);
-  }
+    if(logger_level == LOGGER_LEVEL_INFO || logger_level == LOGGER_LEVEL_DEBUG) {
+        snprintf(a, sizeof(a), "Info Code %d", message);
+        std::string b(a);
+        logger_Log(b, LOGGER_LEVEL_INFO, source);
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -128,11 +128,11 @@ void logger_LogInfo(std::string message, std::string source) {
 // LogDebug ////////////
 // ----------------------------------------------------------------------------
 void logger_LogDebug(int message, std::string source) {
-  if(logger_level == LOGGER_LEVEL_DEBUG) {
-	LoadString(GetModuleHandle(NULL),message, a, 180);
-		std::string b(a);
-    logger_Log(b, LOGGER_LEVEL_DEBUG, source);
-  }
+    if(logger_level == LOGGER_LEVEL_DEBUG) {
+        snprintf(a, sizeof(a), "Debug Code %d", message);
+        std::string b(a);
+        logger_Log(b, LOGGER_LEVEL_DEBUG, source);
+    }
 }
 
 // ----------------------------------------------------------------------------
