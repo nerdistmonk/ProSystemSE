@@ -40,6 +40,7 @@ extern std::string common_Trim(std::string target);
 extern std::string common_Remove(std::string target, char value);
 extern std::string common_Replace(std::string target, char value1, char value2);
 extern std::string common_GetExtension(std::string filename);
+extern int common_ParseInt(std::string text);
 extern uint common_ParseUint(std::string text);
 extern word common_ParseWord(std::string text);
 extern byte common_ParseByte(std::string text);

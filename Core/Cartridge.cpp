@@ -43,6 +43,29 @@ bool cartridge_pokey;
 byte cartridge_controller[2];
 byte cartridge_bank;
 uint cartridge_flags;
+int cartridge_crossx = 0;
+int cartridge_crossy = 0;
+bool cartridge_hsc = false;
+bool cartridge_xm = false;
+bool cartridge_pokey450 = false;
+byte cartridge_hblank = 0;
+bool cartridge_dualanalog = false;
+bool cartridge_leftswitch = false;
+bool cartridge_rightswitch = false;
+bool cartridge_swapbuttons = false;
+
+void cartridge_ResetExtras() {
+    cartridge_crossx = 0;
+    cartridge_crossy = 0;
+    cartridge_hsc = false;
+    cartridge_xm = false;
+    cartridge_pokey450 = false;
+    cartridge_hblank = 0;
+    cartridge_dualanalog = false;
+    cartridge_leftswitch = false;
+    cartridge_rightswitch = false;
+    cartridge_swapbuttons = false;
+}
 
 static byte* cartridge_buffer = NULL;
 static uint cartridge_size = 0;
@@ -301,6 +324,7 @@ static bool cartridge_Load(const byte* data, uint size) {
     }
 
     cartridge_Release();
+    cartridge_ResetExtras();
 
     byte header[128] = {0};
     for (int index = 0; index < 128; index++) {

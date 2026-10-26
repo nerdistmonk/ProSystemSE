@@ -72,4 +72,19 @@ extern byte cartridge_controller[2];
 extern byte cartridge_bank;
 extern uint cartridge_flags;
 
+// Extra per-cartridge settings from ProSystem.dat. These are parsed and stored
+// only; nothing in the core consumes them yet. All are reset to the defaults
+// below on every cartridge load, so values never leak from one ROM to the next.
+extern int cartridge_crossx;        // light gun X offset, default 0
+extern int cartridge_crossy;        // light gun Y offset, default 0 (may be negative)
+extern bool cartridge_hsc;          // High Score Cartridge support, default false
+extern bool cartridge_xm;           // XM expansion, default false
+extern bool cartridge_pokey450;     // POKEY mapped at $0450, default false
+extern byte cartridge_hblank;       // hblank width override, default 0 (none)
+extern bool cartridge_dualanalog;   // dual analog controller, default false
+extern bool cartridge_leftswitch;   // left difficulty switch default, default false
+extern bool cartridge_rightswitch;  // right difficulty switch default, default false
+extern bool cartridge_swapbuttons;  // swap fire buttons, default false
+extern void cartridge_ResetExtras( );
+
 #endif

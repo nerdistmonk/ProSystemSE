@@ -81,7 +81,17 @@ bool database_Load(std::string digest) {
             else if (key == "controller1") cartridge_controller[0] = common_ParseByte(val);  
             else if (key == "controller2") cartridge_controller[1] = common_ParseByte(val);  
             else if (key == "region") cartridge_region = common_ParseByte(val);  
-            else if (key == "flags") cartridge_flags = common_ParseUint(val);  
+            else if (key == "flags") cartridge_flags = common_ParseUint(val);
+            else if (key == "crossx") cartridge_crossx = common_ParseInt(val);
+            else if (key == "crossy") cartridge_crossy = common_ParseInt(val);
+            else if (key == "hsc") cartridge_hsc = common_ParseBool(val);
+            else if (key == "xm") cartridge_xm = common_ParseBool(val);
+            else if (key == "pokey450") cartridge_pokey450 = common_ParseBool(val);
+            else if (key == "hblank") cartridge_hblank = common_ParseByte(val);
+            else if (key == "dualanalog") cartridge_dualanalog = common_ParseBool(val);
+            else if (key == "leftswitch") cartridge_leftswitch = common_ParseBool(val);
+            else if (key == "rightswitch") cartridge_rightswitch = common_ParseBool(val);
+            else if (key == "swapbuttons") cartridge_swapbuttons = common_ParseBool(val);
           }  
         }  
         fclose(file);  

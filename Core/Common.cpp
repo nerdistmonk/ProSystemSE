@@ -81,6 +81,14 @@ std::string common_GetExtension(std::string filename) {
     return "";
 }
 
+int common_ParseInt(std::string text) {
+    try {
+        return static_cast<int>(std::stol(text, nullptr, 0));
+    } catch (...) {
+        return 0;
+    }
+}
+
 uint common_ParseUint(std::string text) {
     try {
         return static_cast<uint>(std::stoul(text, nullptr, 0));
