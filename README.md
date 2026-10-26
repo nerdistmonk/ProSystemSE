@@ -5,6 +5,12 @@ Ported to Linux using SDL3 by R.Shaklfrd and Gemini Flavorous Maximus.
 
 Version 2.0 Completed in October 2026.
 
+# Future Plans
+*Make further improvements to gamepad support.
+*Clean up remnants of old Windows era codebase.
+*Attempt to improve compatibility with newer Atari 7800 homebrew.
+*Add in xbrz/hqx filter support.
+
 # Controls for gamepads
 
 D-Pad / Left Analog Stick: Joystick Direction
@@ -37,6 +43,4 @@ R / S: Console Reset / Select
 
 mkdir build && cd build
 
-cmake ..
-
-make
+cmake .. && make
