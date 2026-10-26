@@ -1,9 +1,9 @@
 # ProsystemSE Emulator for Linux
-Based on ProSystem 1.3 written by Greg Stanton
+Originally based on Greg Stanton's ProSystem Emulator.
 
 Ported to Linux using SDL3.
 
-Version 2.0 Completed in October 2026.
+Version 2.0c Completed in October 2026.
 
 # Controls for gamepads
 

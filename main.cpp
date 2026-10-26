@@ -509,46 +509,75 @@ int main(int argc, char* argv[]) {
         if (prosystem_active && !prosystem_paused) {
             int targetFreq = (prosystem_frequency > 0) ? prosystem_frequency : 60;
 
-            const bool* keys = SDL_GetKeyboardState(NULL);
-            std::memset(input, 0, sizeof(input));
+        const bool* keys = SDL_GetKeyboardState(NULL);
+        std::memset(input, 0, sizeof(input));
+        
+        bool right1 = keys[SDL_SCANCODE_D];
+        bool left1  = keys[SDL_SCANCODE_A];
+        bool down1  = keys[SDL_SCANCODE_S];
+        bool up1    = keys[SDL_SCANCODE_W];
+        bool btn1_1 = keys[SDL_SCANCODE_E];
+        bool btn1_2 = keys[SDL_SCANCODE_Q];
 
-            bool right1 = keys[SDL_SCANCODE_RIGHT];
-            bool left1  = keys[SDL_SCANCODE_LEFT];
-            bool down1  = keys[SDL_SCANCODE_DOWN];
-            bool up1    = keys[SDL_SCANCODE_UP];
-            bool btn1_1 = keys[SDL_SCANCODE_Z];
-            bool btn1_2 = keys[SDL_SCANCODE_X];
+        if (gamepad1) {
+            int16_t axisX = SDL_GetGamepadAxis(gamepad1, SDL_GAMEPAD_AXIS_LEFTX);
+            int16_t axisY = SDL_GetGamepadAxis(gamepad1, SDL_GAMEPAD_AXIS_LEFTY);
 
-            if (gamepad1) {
-                int16_t axisX = SDL_GetGamepadAxis(gamepad1, SDL_GAMEPAD_AXIS_LEFTX);
-                int16_t axisY = SDL_GetGamepadAxis(gamepad1, SDL_GAMEPAD_AXIS_LEFTY);
+            right1 |= SDL_GetGamepadButton(gamepad1, SDL_GAMEPAD_BUTTON_DPAD_RIGHT) || (axisX > JOYSTICK_DEADZONE);
+            left1  |= SDL_GetGamepadButton(gamepad1, SDL_GAMEPAD_BUTTON_DPAD_LEFT)  || (axisX < -JOYSTICK_DEADZONE);
+            down1  |= SDL_GetGamepadButton(gamepad1, SDL_GAMEPAD_BUTTON_DPAD_DOWN)  || (axisY > JOYSTICK_DEADZONE);
+            up1    |= SDL_GetGamepadButton(gamepad1, SDL_GAMEPAD_BUTTON_DPAD_UP)    || (axisY < -JOYSTICK_DEADZONE);
 
-                right1 |= SDL_GetGamepadButton(gamepad1, SDL_GAMEPAD_BUTTON_DPAD_RIGHT) || (axisX > JOYSTICK_DEADZONE);
-                left1  |= SDL_GetGamepadButton(gamepad1, SDL_GAMEPAD_BUTTON_DPAD_LEFT)  || (axisX < -JOYSTICK_DEADZONE);
-                down1  |= SDL_GetGamepadButton(gamepad1, SDL_GAMEPAD_BUTTON_DPAD_DOWN)  || (axisY > JOYSTICK_DEADZONE);
-                up1    |= SDL_GetGamepadButton(gamepad1, SDL_GAMEPAD_BUTTON_DPAD_UP)    || (axisY < -JOYSTICK_DEADZONE);
+            btn1_1 |= SDL_GetGamepadButton(gamepad1, SDL_GAMEPAD_BUTTON_SOUTH);
+            btn1_2 |= SDL_GetGamepadButton(gamepad1, SDL_GAMEPAD_BUTTON_EAST) || SDL_GetGamepadButton(gamepad1, SDL_GAMEPAD_BUTTON_WEST);
+        }
 
-                btn1_1 |= SDL_GetGamepadButton(gamepad1, SDL_GAMEPAD_BUTTON_SOUTH);
-                btn1_2 |= SDL_GetGamepadButton(gamepad1, SDL_GAMEPAD_BUTTON_EAST) || SDL_GetGamepadButton(gamepad1, SDL_GAMEPAD_BUTTON_WEST);
+        input[0x00] = right1 ? 1 : 0;
+        input[0x01] = left1  ? 1 : 0;
+        input[0x02] = down1  ? 1 : 0;
+        input[0x03] = up1    ? 1 : 0;
+        input[0x04] = btn1_1 ? 1 : 0;
+        input[0x05] = btn1_2 ? 1 : 0;
 
-                if (SDL_GetGamepadButton(gamepad1, SDL_GAMEPAD_BUTTON_START)) input[0x0c] = 1;
-                if (SDL_GetGamepadButton(gamepad1, SDL_GAMEPAD_BUTTON_BACK))  input[0x0d] = 1;
-            }
+        // Player 2 Controls
+        bool right2 = keys[SDL_SCANCODE_RIGHT];
+        bool left2  = keys[SDL_SCANCODE_LEFT];
+        bool down2  = keys[SDL_SCANCODE_DOWN];
+        bool up2    = keys[SDL_SCANCODE_UP];
+        bool btn2_1 = keys[SDL_SCANCODE_N];
+        bool btn2_2 = keys[SDL_SCANCODE_M];
 
-            input[0x00] = right1 ? 1 : 0;
-            input[0x01] = left1  ? 1 : 0;
-            input[0x02] = down1  ? 1 : 0;
-            input[0x03] = up1    ? 1 : 0;
-            input[0x04] = btn1_1 ? 1 : 0;
-            input[0x05] = btn1_2 ? 1 : 0;
+        if (gamepad2) {
+            int16_t axisX2 = SDL_GetGamepadAxis(gamepad2, SDL_GAMEPAD_AXIS_LEFTX);
+            int16_t axisY2 = SDL_GetGamepadAxis(gamepad2, SDL_GAMEPAD_AXIS_LEFTY);
 
-            input[0x0e] = leftDiffA ? 1 : 0;
-            input[0x0f] = rightDiffA ? 1 : 0;
+            right2 |= SDL_GetGamepadButton(gamepad2, SDL_GAMEPAD_BUTTON_DPAD_RIGHT) || (axisX2 > JOYSTICK_DEADZONE);
+            left2  |= SDL_GetGamepadButton(gamepad2, SDL_GAMEPAD_BUTTON_DPAD_LEFT)  || (axisX2 < -JOYSTICK_DEADZONE);
+            down2  |= SDL_GetGamepadButton(gamepad2, SDL_GAMEPAD_BUTTON_DPAD_DOWN)  || (axisY2 > JOYSTICK_DEADZONE);
+            up2    |= SDL_GetGamepadButton(gamepad2, SDL_GAMEPAD_BUTTON_DPAD_UP)    || (axisY2 < -JOYSTICK_DEADZONE);
 
-            if (keys[SDL_SCANCODE_R]) input[0x0c] = 1;
-            if (keys[SDL_SCANCODE_S]) input[0x0d] = 1;
+            btn2_1 |= SDL_GetGamepadButton(gamepad2, SDL_GAMEPAD_BUTTON_SOUTH);
+            btn2_2 |= SDL_GetGamepadButton(gamepad2, SDL_GAMEPAD_BUTTON_EAST) || SDL_GetGamepadButton(gamepad2, SDL_GAMEPAD_BUTTON_WEST);
+        }
 
-            prosystem_ExecuteFrame(input);
+        input[0x06] = right2 ? 1 : 0;
+        input[0x07] = left2  ? 1 : 0;
+        input[0x08] = down2  ? 1 : 0;
+        input[0x09] = up2    ? 1 : 0;
+        input[0x0a] = btn2_1 ? 1 : 0;
+        input[0x0b] = btn2_2 ? 1 : 0;
+
+        // Console Switches & RIOT Offsets (0x0C: Reset, 0x0D: Select, 0x0E: Pause, 0x0F: Left Diff, 0x10: Right Diff)
+        bool resetPressed = keys[SDL_SCANCODE_Z] || (gamepad1 && SDL_GetGamepadButton(gamepad1, SDL_GAMEPAD_BUTTON_START));
+        bool selectPressed = keys[SDL_SCANCODE_X] || (gamepad1 && SDL_GetGamepadButton(gamepad1, SDL_GAMEPAD_BUTTON_BACK));
+        
+        input[0x0c] = resetPressed ? 1 : 0;
+        input[0x0d] = selectPressed ? 1 : 0;
+        input[0x0e] = 0; // Pause switch state if needed
+        input[0x0f] = leftDiffA ? 1 : 0;
+        input[0x10] = rightDiffA ? 1 : 0;
+
+        prosystem_ExecuteFrame(input);
 
             if (audioStream && !isMuted) {
                 for (int i = 0; i < AUDIO_SAMPLES_PER_FRAME; ++i) {
