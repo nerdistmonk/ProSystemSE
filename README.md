@@ -1,9 +1,9 @@
-# ProsystemSE Emulator v1.0 for Linux
+# ProsystemSE Emulator for Linux
 Based on ProSystem 1.3 written by Greg Stanton
 
 Ported to Linux using SDL3.
 
-Version 1.0 Completed in October 2026.
+Version 2.0 Completed in October 2026.
 
 # Controls for gamepads
 
@@ -34,9 +34,6 @@ Z / X / Arrows: P1 Action / Joystick
 R / S: Console Reset / Select
 
 # Build Instructions:
-
 mkdir build && cd build
 
-cmake ..
-
-make
+cmake .. && make
