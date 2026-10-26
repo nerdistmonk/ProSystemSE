@@ -14,6 +14,7 @@ file(GLOB CORE_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/Core/*.cpp")
 file(GLOB LIB_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/Lib/*.c" "${CMAKE_CURRENT_SOURCE_DIR}/Lib/*.cpp")
 
 include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/Core
     ${CMAKE_CURRENT_SOURCE_DIR}/Lib
     ${MINIZIP_INCLUDE_DIRS}
@@ -26,3 +27,4 @@ add_executable(prosystem
 )
 
 target_link_libraries(prosystem PRIVATE SDL3::SDL3 ZLIB::ZLIB ${MINIZIP_LIBRARIES})
+

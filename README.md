@@ -5,7 +5,7 @@ Ported to Linux using SDL3.
 
 Version 1.0 Completed in October 2026.
 
-# Controls for keyboard (gamepads are automatically setup)
+# Controls for gamepads
 
 D-Pad / Left Analog Stick: Joystick Direction
 
@@ -16,6 +16,22 @@ B / X Buttons: Button 2
 Start Button: Console Reset
 
 Back Button: Console Select
+
+# Controls for Keyboard
+
+F11 / Alt+Enter: Toggle Borderless Fullscreen
+
+O / F2: Open Native File Chooser
+
+F1: Quick Save State
+
+F5: Quick Load State
+
+F9: Cycle Save Slot (1–9)
+
+Z / X / Arrows: P1 Action / Joystick
+
+R / S: Console Reset / Select
 
 # Build Instructions:
 
