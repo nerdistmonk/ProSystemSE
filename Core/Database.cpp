@@ -44,50 +44,51 @@ void database_Initialize( ) {
 // ----------------------------------------------------------------------------
 // Load
 // ----------------------------------------------------------------------------
-bool database_Load(std::string digest) {
-    if (database_enabled) {
-        logger_LogInfo(IDS_DATABASE1, database_filename);
+bool database_Load(std::string digest) {  
+  if (!database_enabled) return false;
 
-        FILE* file = fopen(database_filename.c_str(), "r");
-        if (file == NULL) {
-            logger_LogError(IDS_DATABASE2, "");
-            return false;
-        }
-
-        // Convert lookup digest to lowercase
-        std::string targetDigest = digest;
-        std::transform(targetDigest.begin(), targetDigest.end(), targetDigest.begin(), ::tolower);
-
-        char buffer[256];
-        while (fgets(buffer, 256, file) != NULL) {
-            std::string line = buffer;
-            if (line.length() >= 33 && line[0] == '[') {
-                std::string lineDigest = line.substr(1, 32);
-                std::transform(lineDigest.begin(), lineDigest.end(), lineDigest.begin(), ::tolower);
-
-                if (lineDigest == targetDigest) {
-                    std::string entry[7];
-                    for (int index = 0; index < 7; index++) {
-                        if (fgets(buffer, 256, file) != NULL) {
-                            entry[index] = common_Remove(buffer, '\n');
-                            entry[index] = common_Remove(entry[index], '\r');
-                        }
-                    }
-
-                    cartridge_title = database_GetValue(entry[0]);
-                    cartridge_type = common_ParseByte(database_GetValue(entry[1]));
-                    cartridge_pokey = common_ParseBool(database_GetValue(entry[2]));
-                    cartridge_controller[0] = common_ParseByte(database_GetValue(entry[3]));
-                    cartridge_controller[1] = common_ParseByte(database_GetValue(entry[4]));
-                    cartridge_region = common_ParseByte(database_GetValue(entry[5]));
-                    cartridge_flags = common_ParseUint(database_GetValue(entry[6]));
-                    
-                    fclose(file);
-                    return true;
-                }
-            }
-        }
-        fclose(file);
-    }
-    return false;
+  logger_LogInfo(IDS_DATABASE1, database_filename);  
+  
+  FILE* file = fopen(database_filename.c_str(), "r");  
+  if (file == NULL) {  
+    logger_LogError(IDS_DATABASE2, "");  
+    return false;  
+  }  
+  
+  std::string targetDigest = digest;  
+  std::transform(targetDigest.begin(), targetDigest.end(), targetDigest.begin(), ::tolower);  
+  
+  char buffer[256];  
+  while (fgets(buffer, sizeof(buffer), file) != NULL) {  
+    std::string line = buffer;  
+    if (line.length() >= 33 && line[0] == '[') {  
+      std::string lineDigest = line.substr(1, 32);  
+      std::transform(lineDigest.begin(), lineDigest.end(), lineDigest.begin(), ::tolower);  
+  
+      if (lineDigest == targetDigest) {  
+        while (fgets(buffer, sizeof(buffer), file) != NULL) {  
+          std::string prop = common_Trim(common_Remove(common_Remove(buffer, '\n'), '\r'));  
+          if (prop.empty() || prop[0] == '[') {  
+            break; // End of this ROM's section
+          }  
+          size_t eqPos = prop.find('=');  
+          if (eqPos != std::string::npos) {  
+            std::string key = common_Trim(prop.substr(0, eqPos));  
+            std::string val = common_Trim(prop.substr(eqPos + 1));  
+            if (key == "title") cartridge_title = val;  
+            else if (key == "type") cartridge_type = common_ParseByte(val);  
+            else if (key == "pokey") cartridge_pokey = common_ParseBool(val);  
+            else if (key == "controller1") cartridge_controller[0] = common_ParseByte(val);  
+            else if (key == "controller2") cartridge_controller[1] = common_ParseByte(val);  
+            else if (key == "region") cartridge_region = common_ParseByte(val);  
+            else if (key == "flags") cartridge_flags = common_ParseUint(val);  
+          }  
+        }  
+        fclose(file);  
+        return true;  
+      }  
+    }  
+  }  
+  fclose(file);  
+  return false;  
 }
