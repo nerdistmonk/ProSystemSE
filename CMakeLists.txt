@@ -9,21 +9,23 @@ find_package(ZLIB REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(MINIZIP REQUIRED minizip)
 
-# Collect source files
+# In CMakeLists.txt:
 file(GLOB CORE_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/Core/*.cpp")
 file(GLOB LIB_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/Lib/*.c" "${CMAKE_CURRENT_SOURCE_DIR}/Lib/*.cpp")
+file(GLOB SDL_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/SDL/*.cpp")
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/Core
     ${CMAKE_CURRENT_SOURCE_DIR}/Lib
+    ${CMAKE_CURRENT_SOURCE_DIR}/SDL
     ${MINIZIP_INCLUDE_DIRS}
 )
 
 add_executable(prosystem
-    main.cpp
     ${CORE_SOURCES}
     ${LIB_SOURCES}
+    ${SDL_SOURCES}
 )
 
 target_link_libraries(prosystem PRIVATE SDL3::SDL3 ZLIB::ZLIB ${MINIZIP_LIBRARIES})

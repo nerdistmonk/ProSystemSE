@@ -3,9 +3,9 @@ Originally based on Greg Stanton's ProSystem Emulator.
 
 Ported to Linux using SDL3.
 
-Version 2.0d Completed in October 2026.
+Version 2.5 - October 26th, 2026
 
-# Controls for gamepads
+# Default Controls for gamepads
 
 D-Pad / Left Analog Stick: Joystick Direction
 
@@ -17,7 +17,7 @@ Start Button: Console Reset
 
 Back Button: Console Select
 
-# Controls for Keyboard
+# Default Controls for Keyboard
 
 F11 / Alt+Enter: Toggle Borderless Fullscreen
 
@@ -39,3 +39,5 @@ Z / X: Console Reset / Select
 mkdir build && cd build
 
 cmake .. && make
+
+(Requires cmake/gcc/SDL3/zlib/minizip)
