@@ -1,7 +1,7 @@
 # ProsystemSE Emulator for Linux
 Based on ProSystem 1.3 written by Greg Stanton
 
-Ported to Linux using SDL3.
+Ported to Linux using SDL3 by R.Shaklfrd and Gemini Flavorous Maximus.
 
 Version 2.0 Completed in October 2026.
 
