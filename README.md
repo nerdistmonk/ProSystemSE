@@ -3,7 +3,7 @@ Originally based on Greg Stanton's ProSystem Emulator.
 
 Ported to Linux using SDL3.
 
-Version 2.0c Completed in October 2026.
+Version 2.0d Completed in October 2026.
 
 # Controls for gamepads
 
@@ -29,9 +29,11 @@ F5: Quick Load State
 
 F9: Cycle Save Slot (1–9)
 
-Z / X / Arrows: P1 Action / Joystick
+Q / E / WASD: P1 Action / Joystick
 
-R / S: Console Reset / Select
+N / M / Arrow Keys: P2 Action / Joystick
+
+Z / X: Console Reset / Select
 
 # Build Instructions:
 mkdir build && cd build
