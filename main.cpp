@@ -144,7 +144,7 @@ void SaveScreenshot(SDL_Renderer* renderer) {
         if (!fs::exists(filename)) break;
     }
 
-    if (SDL_SaveBMP(surface, filename.c_str())) {
+    if (SDL_SavePNG(surface, filename.c_str())) {
         std::cout << "Saved screenshot: " << filename << std::endl;
     }
     SDL_DestroySurface(surface);
@@ -311,7 +311,7 @@ int main(int argc, char* argv[]) {
 
     auto TriggerOpenFileDialog = [&]() {
         static const SDL_DialogFileFilter filters[] = {
-            { "Atari 7800 ROMs (*.a78, *.bin)", "a78;bin" },
+            { "Atari 7800 ROMs (*.a78, *.bin, *.zip)", "a78;bin" },
             { "All Files", "*" }
         };
         const char* defaultLoc = g_lastRomDir.empty() ? NULL : g_lastRomDir.c_str();
@@ -640,3 +640,7 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
+
+
+
+

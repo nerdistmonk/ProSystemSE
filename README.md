@@ -1,15 +1,9 @@
-# ProsystemSE Emulator for Linux
+# ProsystemSE Emulator v1.0 for Linux
 Based on ProSystem 1.3 written by Greg Stanton
 
-Ported to Linux using SDL3 by R.Shaklfrd and Gemini Flavorous Maximus.
+Ported to Linux using SDL3.
 
-Version 2.0 Completed in October 2026.
-
-# Future Plans
-*Make further improvements to gamepad support.
-*Clean up remnants of old Windows era codebase.
-*Attempt to improve compatibility with newer Atari 7800 homebrew.
-*Add in xbrz/hqx filter support.
+Version 1.0 Completed in October 2026.
 
 # Controls for gamepads
 
@@ -43,4 +37,6 @@ R / S: Console Reset / Select
 
 mkdir build && cd build
 
-cmake .. && make
+cmake ..
+
+make
