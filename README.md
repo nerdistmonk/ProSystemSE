@@ -21,58 +21,53 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ```
-
 # Version 3.0 - October 27th, 2026
+
+![image](489626271745)
 
 # Default Controls for gamepads
 
-D-Pad: Joystick Direction
+**D-Pad: Joystick Direction**
 
-A Button (South): Button 1 (Fire)
+**A Button (South): Button 1 (Fire)**
 
-B / X Buttons: Button 2
+**B / X Buttons: Button 2**
 
-Start Button: Console Reset
+**Start Button: Console Reset**
 
-Back Button: Console Select
+**Back Button: Console Select**
 
 # Default Controls for Keyboard
 
-F11 / Alt+Enter: Toggle Borderless Fullscreen
+**F11 / Alt+Enter: Toggle Borderless Fullscreen**
 
-O / F2: Open Native File Chooser
+**O / F2: Open Native File Chooser**
 
-F1: Quick Save State
+**F1: Quick Save State**
 
-F5: Quick Load State
+**F5: Quick Load State**
 
-F9: Cycle Save Slot (1–9)
+**F9: Cycle Save Slot (1–9)**
 
-Q / E / WASD: P1 Action / Joystick
+**Q / E / WASD: P1 Action / Joystick**
 
-N / M / Arrow Keys: P2 Action / Joystick
+**N / M / Arrow Keys: P2 Action / Joystick**
 
-Z / X: Console Reset / Select
+**Z / X: Console Reset / Select**
 
 # Commandline switches
+
 ```
 -f = fullscreen
-```
-```
 -r = set region (pal or ntsc)
-```
-```
 -s = set samplerate (11025,22050,44100,48000)
-```
-```
 -x = enable xbrz 2x filtering
 ```
-
 # Build Instructions:
+
 ```
 mkdir build && cd build
-```
-```
 cmake .. && make
 ```
-(Requires cmake/gcc/SDL3/zlib/minizip)
+**(Requires cmake/gcc/SDL3/zlib/minizip)**
+
