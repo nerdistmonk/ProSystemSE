@@ -58,14 +58,18 @@ Z / X: Console Reset / Select
 ```
 -f = fullscreen
 ```
+```
 -r = set region (pal or ntsc)
+```
 ```
 -s = set samplerate (11025,22050,44100,48000)
 ```
 
 # Build Instructions:
+```
 mkdir build && cd build
-
+```
+```
 cmake .. && make
-
+```
 (Requires cmake/gcc/SDL3/zlib/minizip)
