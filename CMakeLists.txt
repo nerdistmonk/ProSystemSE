@@ -28,6 +28,8 @@ add_executable(prosystem
     ${SDL_SOURCES}
 )
 
-target_link_libraries(prosystem PRIVATE SDL3::SDL3 ZLIB::ZLIB ${MINIZIP_LIBRARIES})
-
-
+target_link_libraries(prosystem PRIVATE
+    SDL3::SDL3
+    ZLIB::ZLIB
+    ${MINIZIP_LIBRARIES}
+)
