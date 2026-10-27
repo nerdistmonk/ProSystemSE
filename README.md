@@ -54,6 +54,11 @@ N / M / Arrow Keys: P2 Action / Joystick
 
 Z / X: Console Reset / Select
 
+# Commandline switches
+-f = fullscreen
+-r = set region (pal or ntsc)
+-s = set samplerate (11025,22050,44100,48000)
+
 # Build Instructions:
 mkdir build && cd build
 
