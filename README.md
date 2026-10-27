@@ -23,7 +23,7 @@
 ```
 # Version 3.0 - October 27th, 2026
 
-![image](489626271745)
+![image](shot.png)
 
 # Default Controls for gamepads
 
