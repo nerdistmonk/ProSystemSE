@@ -32,6 +32,7 @@ enum MenuCommand {
     CMD_VIDEO_ASPECT_TOGGLE,
     CMD_VIDEO_FULLSCREEN,
     CMD_VIDEO_SCREENSHOT,
+    CMD_VIDEO_FILTER_XBRZ,
 
     CMD_AUDIO_MUTE,
     CMD_AUDIO_FREQ_11025,
@@ -67,6 +68,7 @@ void Menu_UpdateRegionLabel(int mode);
 void Menu_UpdateAudioFreqLabel(int rate);
 void Menu_UpdateSaveSlotLabel(int slot);
 void Menu_UpdateAspectLabel(bool preserved);
+void Menu_UpdateFilterLabel(bool enabled);
 void Menu_UpdateDiffLeftLabel(bool isA);
 void Menu_UpdateDiffRightLabel(bool isA);
 

@@ -1,11 +1,13 @@
 #include "Video.h"
 #include "Maria.h"
 #include "Palette.h"
+#include "xbrz.h"
 
 #include <iostream>
 #include <filesystem>
 #include <cstdio>
 #include <cstdint>
+#include <vector>
 
 namespace fs = std::filesystem;
 
@@ -15,6 +17,8 @@ static SDL_Texture* g_texture = nullptr;
 
 static bool g_isFullscreen = false;
 static bool g_preserveAspect = true;
+static bool g_xbrzEnabled = false;
+static std::vector<uint32_t> g_scaledBuffer(VISIBLE_WIDTH * 2 * VISIBLE_HEIGHT * 2);
 static uint32_t g_pixelBuffer[VISIBLE_WIDTH * VISIBLE_HEIGHT];
 
 bool Video_Init(const std::string& title, int windowWidth, int windowHeight) {
@@ -79,7 +83,13 @@ void Video_RenderFrame() {
         g_pixelBuffer[i] = (0xFF000000) | (r << 16) | (g << 8) | b;
     }
 
-    SDL_UpdateTexture(g_texture, NULL, g_pixelBuffer, VISIBLE_WIDTH * sizeof(uint32_t));
+    if (g_xbrzEnabled) {
+        xbrz::scale(2, g_pixelBuffer, g_scaledBuffer.data(), VISIBLE_WIDTH, VISIBLE_HEIGHT, xbrz::ColorFormat::ARGB);
+        SDL_UpdateTexture(g_texture, NULL, g_scaledBuffer.data(), (VISIBLE_WIDTH * 2) * sizeof(uint32_t));
+    } else {
+        SDL_UpdateTexture(g_texture, NULL, g_pixelBuffer, VISIBLE_WIDTH * sizeof(uint32_t));
+    }
+
     SDL_RenderTexture(g_renderer, g_texture, NULL, NULL);
 }
 
@@ -137,6 +147,34 @@ void Video_SaveScreenshot() {
         std::cout << "Saved screenshot: " << filename << std::endl;
     }
     SDL_DestroySurface(surface);
+}
+
+void Video_ToggleFilter() {
+    if (!g_renderer) return;
+
+    g_xbrzEnabled = !g_xbrzEnabled;
+
+    // Recreate streaming texture to match native 1x (320x240) or 2x (640x480)
+    if (g_texture) {
+        SDL_DestroyTexture(g_texture);
+    }
+
+    int width = g_xbrzEnabled ? (VISIBLE_WIDTH * 2) : VISIBLE_WIDTH;
+    int height = g_xbrzEnabled ? (VISIBLE_HEIGHT * 2) : VISIBLE_HEIGHT;
+
+    g_texture = SDL_CreateTexture(g_renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height);
+    if (g_texture) {
+        SDL_SetTextureScaleMode(g_texture, SDL_SCALEMODE_NEAREST);
+    }
+}
+
+void Video_SetFilter(bool enabled) {
+    if (g_xbrzEnabled == enabled) return;
+    Video_ToggleFilter();
+}
+
+bool Video_IsFilterEnabled() {
+    return g_xbrzEnabled;
 }
 
 SDL_Window* Video_GetWindow() {

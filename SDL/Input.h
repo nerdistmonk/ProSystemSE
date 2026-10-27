@@ -16,14 +16,12 @@ void Input_HandleDeviceEvent(const SDL_Event& event);
 void Input_LoadControls();
 void Input_CheckAutoReload();
 
-// In-engine Gamepad Configuration Modal
+// In-engine Configuration Modals (Keyboard & Gamepad)
 void Input_StartJoyConfig(int player);
+void Input_StartKeyConfig(int player);
 bool Input_IsConfigActive();
 bool Input_HandleConfigEvent(const SDL_Event& event);
 void Input_RenderConfigModal(SDL_Renderer* renderer);
-
-// Terminal launcher for keyboard configuration
-void Input_LaunchKeyConfig(int player);
 
 // Frame polling: fills ProSystem input[17] buffer
 void Input_Poll(unsigned char input[17], bool leftDiffA, bool rightDiffA);

@@ -72,6 +72,31 @@ struct JoyConfigState {
 
 static JoyConfigState g_joyConfig;
 
+// Keyboard Configuration Modal State
+enum KeyConfigStep {
+    KEY_CFG_IDLE = 0,
+    KEY_CFG_UP,
+    KEY_CFG_DOWN,
+    KEY_CFG_LEFT,
+    KEY_CFG_RIGHT,
+    KEY_CFG_FIRE1,
+    KEY_CFG_FIRE2
+};
+
+struct KeyConfigState {
+    bool active = false;
+    int player = 1;
+    KeyConfigStep step = KEY_CFG_IDLE;
+    SDL_Scancode up = SDL_SCANCODE_UNKNOWN;
+    SDL_Scancode down = SDL_SCANCODE_UNKNOWN;
+    SDL_Scancode left = SDL_SCANCODE_UNKNOWN;
+    SDL_Scancode right = SDL_SCANCODE_UNKNOWN;
+    SDL_Scancode b1 = SDL_SCANCODE_UNKNOWN;
+    SDL_Scancode b2 = SDL_SCANCODE_UNKNOWN;
+};
+
+static KeyConfigState g_keyConfig;
+
 static fs::file_time_type GetFileModTime(const std::string& filepath) {
     std::error_code ec;
     if (fs::exists(filepath, ec)) {
@@ -99,6 +124,27 @@ static void SaveJoyConfig(int player, SDL_GamepadButton up, SDL_GamepadButton do
     out << "RIGHT=" << btnToStr(right, "dpright") << "\n";
     out << "BTN1=" << btnToStr(b1, "south") << "\n";
     out << "BTN2=" << btnToStr(b2, "west") << "\n";
+}
+
+static void SaveKeyConfig(int player, SDL_Scancode up, SDL_Scancode down,
+                          SDL_Scancode left, SDL_Scancode right,
+                          SDL_Scancode b1, SDL_Scancode b2) {
+    std::string filename = (player == 1) ? "keys_p1.ini" : "keys_p2.ini";
+    std::ofstream out(g_configDir + "/" + filename);
+    if (!out.is_open()) return;
+
+    auto scToStr = [](SDL_Scancode sc, const char* defStr) {
+        const char* str = SDL_GetScancodeName(sc);
+        return (str && str[0] != '\0') ? str : defStr;
+    };
+
+    out << (player == 1 ? "[P1_KEYS]\n" : "[P2_KEYS]\n");
+    out << "UP=" << scToStr(up, "W") << "\n";
+    out << "DOWN=" << scToStr(down, "S") << "\n";
+    out << "LEFT=" << scToStr(left, "A") << "\n";
+    out << "RIGHT=" << scToStr(right, "D") << "\n";
+    out << "BTN1=" << scToStr(b1, "E") << "\n";
+    out << "BTN2=" << scToStr(b2, "Q") << "\n";
 }
 
 static void LoadJoyConfig(int player, SDL_GamepadButton& up, SDL_GamepadButton& down,
@@ -258,73 +304,145 @@ void Input_StartJoyConfig(int player) {
     g_joyConfig.step = JOY_CFG_UP;
 }
 
+void Input_StartKeyConfig(int player) {
+    g_keyConfig.active = true;
+    g_keyConfig.player = player;
+    g_keyConfig.step = KEY_CFG_UP;
+}
+
 bool Input_IsConfigActive() {
-    return g_joyConfig.active;
+    return g_joyConfig.active || g_keyConfig.active;
 }
 
 bool Input_HandleConfigEvent(const SDL_Event& event) {
-    if (!g_joyConfig.active) return false;
+    if (!g_joyConfig.active && !g_keyConfig.active) return false;
 
-    if (event.type == SDL_EVENT_GAMEPAD_BUTTON_DOWN) {
-        SDL_GamepadButton pressedBtn = static_cast<SDL_GamepadButton>(event.gbutton.button);
-        switch (g_joyConfig.step) {
-            case JOY_CFG_UP:
-                g_joyConfig.up = pressedBtn;
-                g_joyConfig.step = JOY_CFG_DOWN;
-                break;
-            case JOY_CFG_DOWN:
-                g_joyConfig.down = pressedBtn;
-                g_joyConfig.step = JOY_CFG_LEFT;
-                break;
-            case JOY_CFG_LEFT:
-                g_joyConfig.left = pressedBtn;
-                g_joyConfig.step = JOY_CFG_RIGHT;
-                break;
-            case JOY_CFG_RIGHT:
-                g_joyConfig.right = pressedBtn;
-                g_joyConfig.step = JOY_CFG_FIRE1;
-                break;
-            case JOY_CFG_FIRE1:
-                g_joyConfig.b1 = pressedBtn;
-                g_joyConfig.step = JOY_CFG_FIRE2;
-                break;
-            case JOY_CFG_FIRE2:
-                g_joyConfig.b2 = pressedBtn;
-                if (g_joyConfig.player == 1) {
-                    p1_btn_up = g_joyConfig.up;
-                    p1_btn_down = g_joyConfig.down;
-                    p1_btn_left = g_joyConfig.left;
-                    p1_btn_right = g_joyConfig.right;
-                    p1_btn_fire1 = g_joyConfig.b1;
-                    p1_btn_fire2 = g_joyConfig.b2;
-                    SaveJoyConfig(1, p1_btn_up, p1_btn_down, p1_btn_left, p1_btn_right, p1_btn_fire1, p1_btn_fire2);
-                } else {
-                    p2_btn_up = g_joyConfig.up;
-                    p2_btn_down = g_joyConfig.down;
-                    p2_btn_left = g_joyConfig.left;
-                    p2_btn_right = g_joyConfig.right;
-                    p2_btn_fire1 = g_joyConfig.b1;
-                    p2_btn_fire2 = g_joyConfig.b2;
-                    SaveJoyConfig(2, p2_btn_up, p2_btn_down, p2_btn_left, p2_btn_right, p2_btn_fire1, p2_btn_fire2);
-                }
-                g_joyConfig.active = false;
-                g_joyConfig.step = JOY_CFG_IDLE;
-                break;
-            default:
-                break;
+    // --- Keyboard Configuration In-Engine ---
+    if (g_keyConfig.active) {
+        if (event.type == SDL_EVENT_KEY_DOWN) {
+            SDL_Scancode sc = event.key.scancode;
+
+            if (event.key.key == SDLK_ESCAPE) {
+                g_keyConfig.active = false;
+                g_keyConfig.step = KEY_CFG_IDLE;
+                return true;
+            }
+
+            switch (g_keyConfig.step) {
+                case KEY_CFG_UP:
+                    g_keyConfig.up = sc;
+                    g_keyConfig.step = KEY_CFG_DOWN;
+                    break;
+                case KEY_CFG_DOWN:
+                    g_keyConfig.down = sc;
+                    g_keyConfig.step = KEY_CFG_LEFT;
+                    break;
+                case KEY_CFG_LEFT:
+                    g_keyConfig.left = sc;
+                    g_keyConfig.step = KEY_CFG_RIGHT;
+                    break;
+                case KEY_CFG_RIGHT:
+                    g_keyConfig.right = sc;
+                    g_keyConfig.step = KEY_CFG_FIRE1;
+                    break;
+                case KEY_CFG_FIRE1:
+                    g_keyConfig.b1 = sc;
+                    g_keyConfig.step = KEY_CFG_FIRE2;
+                    break;
+                case KEY_CFG_FIRE2:
+                    g_keyConfig.b2 = sc;
+                    if (g_keyConfig.player == 1) {
+                        p1_sc_up = g_keyConfig.up;
+                        p1_sc_down = g_keyConfig.down;
+                        p1_sc_left = g_keyConfig.left;
+                        p1_sc_right = g_keyConfig.right;
+                        p1_sc_btn1 = g_keyConfig.b1;
+                        p1_sc_btn2 = g_keyConfig.b2;
+                        SaveKeyConfig(1, p1_sc_up, p1_sc_down, p1_sc_left, p1_sc_right, p1_sc_btn1, p1_sc_btn2);
+                    } else {
+                        p2_sc_up = g_keyConfig.up;
+                        p2_sc_down = g_keyConfig.down;
+                        p2_sc_left = g_keyConfig.left;
+                        p2_sc_right = g_keyConfig.right;
+                        p2_sc_btn1 = g_keyConfig.b1;
+                        p2_sc_btn2 = g_keyConfig.b2;
+                        SaveKeyConfig(2, p2_sc_up, p2_sc_down, p2_sc_left, p2_sc_right, p2_sc_btn1, p2_sc_btn2);
+                    }
+                    g_keyConfig.active = false;
+                    g_keyConfig.step = KEY_CFG_IDLE;
+                    break;
+                default:
+                    break;
+            }
+            return true;
         }
-        return true;
-    } else if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_ESCAPE) {
-        g_joyConfig.active = false;
-        g_joyConfig.step = JOY_CFG_IDLE;
         return true;
     }
 
-    return true; // Absorb events while modal is up
+    // --- Gamepad Configuration In-Engine ---
+    if (g_joyConfig.active) {
+        if (event.type == SDL_EVENT_GAMEPAD_BUTTON_DOWN) {
+            SDL_GamepadButton pressedBtn = static_cast<SDL_GamepadButton>(event.gbutton.button);
+            switch (g_joyConfig.step) {
+                case JOY_CFG_UP:
+                    g_joyConfig.up = pressedBtn;
+                    g_joyConfig.step = JOY_CFG_DOWN;
+                    break;
+                case JOY_CFG_DOWN:
+                    g_joyConfig.down = pressedBtn;
+                    g_joyConfig.step = JOY_CFG_LEFT;
+                    break;
+                case JOY_CFG_LEFT:
+                    g_joyConfig.left = pressedBtn;
+                    g_joyConfig.step = JOY_CFG_RIGHT;
+                    break;
+                case JOY_CFG_RIGHT:
+                    g_joyConfig.right = pressedBtn;
+                    g_joyConfig.step = JOY_CFG_FIRE1;
+                    break;
+                case JOY_CFG_FIRE1:
+                    g_joyConfig.b1 = pressedBtn;
+                    g_joyConfig.step = JOY_CFG_FIRE2;
+                    break;
+                case JOY_CFG_FIRE2:
+                    g_joyConfig.b2 = pressedBtn;
+                    if (g_joyConfig.player == 1) {
+                        p1_btn_up = g_joyConfig.up;
+                        p1_btn_down = g_joyConfig.down;
+                        p1_btn_left = g_joyConfig.left;
+                        p1_btn_right = g_joyConfig.right;
+                        p1_btn_fire1 = g_joyConfig.b1;
+                        p1_btn_fire2 = g_joyConfig.b2;
+                        SaveJoyConfig(1, p1_btn_up, p1_btn_down, p1_btn_left, p1_btn_right, p1_btn_fire1, p1_btn_fire2);
+                    } else {
+                        p2_btn_up = g_joyConfig.up;
+                        p2_btn_down = g_joyConfig.down;
+                        p2_btn_left = g_joyConfig.left;
+                        p2_btn_right = g_joyConfig.right;
+                        p2_btn_fire1 = g_joyConfig.b1;
+                        p2_btn_fire2 = g_joyConfig.b2;
+                        SaveJoyConfig(2, p2_btn_up, p2_btn_down, p2_btn_left, p2_btn_right, p2_btn_fire1, p2_btn_fire2);
+                    }
+                    g_joyConfig.active = false;
+                    g_joyConfig.step = JOY_CFG_IDLE;
+                    break;
+                default:
+                    break;
+            }
+            return true;
+        } else if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_ESCAPE) {
+            g_joyConfig.active = false;
+            g_joyConfig.step = JOY_CFG_IDLE;
+            return true;
+        }
+        return true;
+    }
+
+    return false;
 }
 
 void Input_RenderConfigModal(SDL_Renderer* renderer) {
-    if (!g_joyConfig.active) return;
+    if (!g_joyConfig.active && !g_keyConfig.active) return;
 
     SDL_SetRenderDrawColor(renderer, 20, 20, 20, 235);
     SDL_FRect modalRect = { 30.0f, 85.0f, 260.0f, 54.0f };
@@ -333,73 +451,40 @@ void Input_RenderConfigModal(SDL_Renderer* renderer) {
     SDL_RenderRect(renderer, &modalRect);
 
     char titleBuf[64];
-    std::snprintf(titleBuf, sizeof(titleBuf), "Configuring P%d Gamepad", g_joyConfig.player);
-    SDL_RenderDebugText(renderer, 40.0f, 92.0f, titleBuf);
-
     const char* promptText = "";
-    switch (g_joyConfig.step) {
-        case JOY_CFG_UP:    promptText = "Press Button for: DPAD UP"; break;
-        case JOY_CFG_DOWN:  promptText = "Press Button for: DPAD DOWN"; break;
-        case JOY_CFG_LEFT:  promptText = "Press Button for: DPAD LEFT"; break;
-        case JOY_CFG_RIGHT: promptText = "Press Button for: DPAD RIGHT"; break;
-        case JOY_CFG_FIRE1: promptText = "Press Button for: FIRE 1"; break;
-        case JOY_CFG_FIRE2: promptText = "Press Button for: FIRE 2"; break;
-        default: break;
+
+    if (g_keyConfig.active) {
+        std::snprintf(titleBuf, sizeof(titleBuf), "Configuring P%d Keyboard", g_keyConfig.player);
+        switch (g_keyConfig.step) {
+            case KEY_CFG_UP: promptText = "Press Key for: UP"; break;
+            case KEY_CFG_DOWN: promptText = "Press Key for: DOWN"; break;
+            case KEY_CFG_LEFT: promptText = "Press Key for: LEFT"; break;
+            case KEY_CFG_RIGHT: promptText = "Press Key for: RIGHT"; break;
+            case KEY_CFG_FIRE1: promptText = "Press Key for: BUTTON 1 (FIRE)"; break;
+            case KEY_CFG_FIRE2: promptText = "Press Key for: BUTTON 2"; break;
+            default: break;
+        }
+    } else {
+        std::snprintf(titleBuf, sizeof(titleBuf), "Configuring P%d Gamepad", g_joyConfig.player);
+        switch (g_joyConfig.step) {
+            case JOY_CFG_UP: promptText = "Press Button for: DPAD UP"; break;
+            case JOY_CFG_DOWN: promptText = "Press Button for: DPAD DOWN"; break;
+            case JOY_CFG_LEFT: promptText = "Press Button for: DPAD LEFT"; break;
+            case JOY_CFG_RIGHT: promptText = "Press Button for: DPAD RIGHT"; break;
+            case JOY_CFG_FIRE1: promptText = "Press Button for: FIRE 1"; break;
+            case JOY_CFG_FIRE2: promptText = "Press Button for: FIRE 2"; break;
+            default: break;
+        }
     }
+
+    SDL_SetRenderDrawColor(renderer, 200, 200, 200, 255);
+    SDL_RenderDebugText(renderer, 40.0f, 92.0f, titleBuf);
 
     SDL_SetRenderDrawColor(renderer, 255, 220, 0, 255);
     SDL_RenderDebugText(renderer, 40.0f, 108.0f, promptText);
 
     SDL_SetRenderDrawColor(renderer, 150, 150, 150, 255);
     SDL_RenderDebugText(renderer, 40.0f, 124.0f, "[ESC] to Cancel");
-}
-
-void Input_LaunchKeyConfig(int player) {
-    const char* terminals[] = {
-        "gnome-terminal", "konsole", "foot", "kitty", "alacritty", "wezterm", "xterm"
-    };
-
-    std::string foundTerm = "";
-    for (const char* term : terminals) {
-        std::string checkCmd = "which " + std::string(term) + " > /dev/null 2>&1";
-        if (std::system(checkCmd.c_str()) == 0) {
-            foundTerm = term;
-            break;
-        }
-    }
-
-    if (foundTerm.empty()) {
-        std::cerr << "Error: No supported terminal emulator found!" << std::endl;
-        return;
-    }
-
-    std::string pStr = (player == 1) ? "P1" : "P2";
-    std::string iniFile = (player == 1) ? "keys_p1.ini" : "keys_p2.ini";
-
-    std::string title = pStr + " - Keys Configuration";
-    std::string promptCmd = 
-        "mkdir -p ~/.config/prosystem;"
-        "echo '=== " + pStr + " Keyboard Setup ===';"
-        "echo -n 'Press Key for UP: '; read up;"
-        "echo -n 'Press Key for DOWN: '; read down;"
-        "echo -n 'Press Key for LEFT: '; read left;"
-        "echo -n 'Press Key for RIGHT: '; read right;"
-        "echo -n 'Press Key for BUTTON 1: '; read b1;"
-        "echo -n 'Press Key for BUTTON 2: '; read b2;"
-        "printf '[" + pStr + "_KEYS]\\nUP=%s\\nDOWN=%s\\nLEFT=%s\\nRIGHT=%s\\nBTN1=%s\\nBTN2=%s\\n' "
-        "\"\\$up\" \"\\$down\" \"\\$left\" \"\\$right\" \"\\$b1\" \"\\$b2\" > ~/.config/prosystem/" + iniFile + ";"
-        "echo 'Saved " + iniFile + "! Press Enter to close.'; read";
-
-    std::string fullCommand;
-    if (foundTerm == "gnome-terminal") {
-        fullCommand = "gnome-terminal --title=\"" + title + "\" -- bash -c \"" + promptCmd + "\" &";
-    } else if (foundTerm == "konsole") {
-        fullCommand = "konsole --title \"" + title + "\" -e bash -c \"" + promptCmd + "\" &";
-    } else {
-        fullCommand = foundTerm + " -e bash -c \"" + promptCmd + "\" &";
-    }
-
-    std::system(fullCommand.c_str());
 }
 
 void Input_Poll(unsigned char input[17], bool leftDiffA, bool rightDiffA) {
@@ -419,9 +504,9 @@ void Input_Poll(unsigned char input[17], bool leftDiffA, bool rightDiffA) {
         int16_t axisY = SDL_GetGamepadAxis(g_gamepad1, SDL_GAMEPAD_AXIS_LEFTY);
 
         right1 |= SDL_GetGamepadButton(g_gamepad1, p1_btn_right) || (axisX > JOYSTICK_DEADZONE);
-        left1  |= SDL_GetGamepadButton(g_gamepad1, p1_btn_left)  || (axisX < -JOYSTICK_DEADZONE);
-        down1  |= SDL_GetGamepadButton(g_gamepad1, p1_btn_down)  || (axisY > JOYSTICK_DEADZONE);
-        up1    |= SDL_GetGamepadButton(g_gamepad1, p1_btn_up)    || (axisY < -JOYSTICK_DEADZONE);
+        left1 |= SDL_GetGamepadButton(g_gamepad1, p1_btn_left) || (axisX < -JOYSTICK_DEADZONE);
+        down1 |= SDL_GetGamepadButton(g_gamepad1, p1_btn_down) || (axisY > JOYSTICK_DEADZONE);
+        up1 |= SDL_GetGamepadButton(g_gamepad1, p1_btn_up) || (axisY < -JOYSTICK_DEADZONE);
 
         btn1_1 |= SDL_GetGamepadButton(g_gamepad1, p1_btn_fire1);
         btn1_2 |= SDL_GetGamepadButton(g_gamepad1, p1_btn_fire2);
@@ -447,9 +532,9 @@ void Input_Poll(unsigned char input[17], bool leftDiffA, bool rightDiffA) {
         int16_t axisY2 = SDL_GetGamepadAxis(g_gamepad2, SDL_GAMEPAD_AXIS_LEFTY);
 
         right2 |= SDL_GetGamepadButton(g_gamepad2, p2_btn_right) || (axisX2 > JOYSTICK_DEADZONE);
-        left2  |= SDL_GetGamepadButton(g_gamepad2, p2_btn_left)  || (axisX2 < -JOYSTICK_DEADZONE);
-        down2  |= SDL_GetGamepadButton(g_gamepad2, p2_btn_down)  || (axisY2 > JOYSTICK_DEADZONE);
-        up2    |= SDL_GetGamepadButton(g_gamepad2, p2_btn_up)    || (axisY2 < -JOYSTICK_DEADZONE);
+        left2 |= SDL_GetGamepadButton(g_gamepad2, p2_btn_left) || (axisX2 < -JOYSTICK_DEADZONE);
+        down2 |= SDL_GetGamepadButton(g_gamepad2, p2_btn_down) || (axisY2 > JOYSTICK_DEADZONE);
+        up2 |= SDL_GetGamepadButton(g_gamepad2, p2_btn_up) || (axisY2 < -JOYSTICK_DEADZONE);
 
         btn2_1 |= SDL_GetGamepadButton(g_gamepad2, p2_btn_fire1);
         btn2_2 |= SDL_GetGamepadButton(g_gamepad2, p2_btn_fire2);

@@ -33,4 +33,9 @@ void Video_SaveScreenshot();
 SDL_Window*   Video_GetWindow();
 SDL_Renderer* Video_GetRenderer();
 
+// xbrz
+void Video_ToggleFilter();
+void Video_SetFilter(bool enabled);
+bool Video_IsFilterEnabled();
+
 #endif // PROSYSTEM_SDL_VIDEO_H

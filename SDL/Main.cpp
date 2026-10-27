@@ -85,6 +85,37 @@ void SaveConfigHistory(const std::string& newPath) {
     }
 }
 
+void LoadIniSettings(bool& xbrzOut) {
+    std::ifstream ini(g_configDir + "/prosystem.ini");
+    if (!ini.is_open()) return;
+
+    std::string line;
+    while (std::getline(ini, line)) {
+        auto pos = line.find('=');
+        if (pos == std::string::npos) continue;
+
+        std::string key = line.substr(0, pos);
+        std::string val = line.substr(pos + 1);
+
+        key.erase(0, key.find_first_not_of(" \t\r\n"));
+        key.erase(key.find_last_not_of(" \t\r\n") + 1);
+        val.erase(0, val.find_first_not_of(" \t\r\n"));
+        val.erase(val.find_last_not_of(" \t\r\n") + 1);
+
+        if (key == "xbrz") {
+            xbrzOut = (val == "1" || val == "true" || val == "on");
+        }
+    }
+}
+
+void SaveIniSettings() {
+    std::ofstream ini(g_configDir + "/prosystem.ini");
+    if (!ini.is_open()) return;
+
+    ini << "[Video]\n";
+    ini << "xbrz=" << (Video_IsFilterEnabled() ? "1" : "0") << "\n";
+}
+
 void LoadBios(const std::string& configDir) {
     std::vector<std::string> searchPaths;
 
@@ -150,6 +181,8 @@ int main(int argc, char* argv[]) {
     bool startFullscreen = false;
     int targetSampleRate = 44100;
     int forceRegion = 0; // 0 = Auto/ROM default, 1 = NTSC, 2 = PAL
+    bool cliXbrzSet = false;
+    bool cliXbrzVal = false;
     std::string romPathFromArgs = "";
 
     for (int i = 1; i < argc; ++i) {
@@ -157,6 +190,12 @@ int main(int argc, char* argv[]) {
 
         if (arg == "-f" || arg == "--fullscreen") {
             startFullscreen = true;
+        } else if (arg == "-x" || arg == "--xbrz") {
+            cliXbrzSet = true;
+            cliXbrzVal = true;
+        } else if (arg == "--no-xbrz") {
+            cliXbrzSet = true;
+            cliXbrzVal = false;
         } else if ((arg == "-s" || arg == "--samplerate") && i + 1 < argc) {
             targetSampleRate = std::atoi(argv[++i]);
         } else if ((arg == "-r" || arg == "--region") && i + 1 < argc) {
@@ -172,10 +211,12 @@ int main(int argc, char* argv[]) {
         } else if (arg == "-h" || arg == "--help") {
             std::cout << "Usage: prosystem [options] [rom_path]\n\n"
                       << "Options:\n"
-                      << "  -f, --fullscreen           Start in borderless fullscreen\n"
-                      << "  -s, --samplerate <rate>    Set audio sample rate (11025, 22050, 44100, 48000)\n"
-                      << "  -r, --region <ntsc|pal>    Force NTSC (60Hz) or PAL (50Hz) timing\n"
-                      << "  -h, --help                 Show this help message\n";
+                      << "  -f, --fullscreen          Start in borderless fullscreen\n"
+                      << "  -x, --xbrz                Enable 2x xBRZ scaling filter\n"
+                      << "      --no-xbrz             Disable 2x xBRZ scaling filter\n"
+                      << "  -s, --samplerate <rate>   Set audio sample rate (11025, 22050, 44100, 48000)\n"
+                      << "  -r, --region <ntsc|pal>   Force NTSC (60Hz) or PAL (50Hz) timing\n"
+                      << "  -h, --help                Show this help message\n";
             return 0;
         } else if (arg[0] != '-') {
             romPathFromArgs = arg;
@@ -200,11 +241,21 @@ int main(int argc, char* argv[]) {
 
     database_Initialize();
     LoadConfigHistory();
+
+    // Load INI settings, respecting CLI override if provided
+    bool iniXbrz = false;
+    LoadIniSettings(iniXbrz);
+    bool initialXbrz = cliXbrzSet ? cliXbrzVal : iniXbrz;
+    if (initialXbrz) {
+        Video_SetFilter(true);
+    }
+
     LoadBios(g_configDir);
 
     Audio_Init(31440, targetSampleRate);
     Menu_Init();
     Menu_UpdateAudioFreqLabel(targetSampleRate);
+    Menu_UpdateFilterLabel(Video_IsFilterEnabled());
 
     // Synchronize Region GUI and frequency states from CLI flags immediately
     if (forceRegion == 1) {
@@ -267,7 +318,7 @@ int main(int argc, char* argv[]) {
                 running = false;
             }
 
-            // Intercept modal gamepad configuration if active
+            // Intercept modal configuration (keyboard or gamepad) if active
             if (Input_HandleConfigEvent(event)) {
                 continue;
             }
@@ -328,11 +379,11 @@ int main(int argc, char* argv[]) {
                         rightDiffA = !rightDiffA;
                         Menu_UpdateDiffRightLabel(rightDiffA);
                     } else if (cmd == CMD_CONTROLS_P1_KEYS) {
-                        Input_LaunchKeyConfig(1);
+                        Input_StartKeyConfig(1);
                     } else if (cmd == CMD_CONTROLS_P1_JOY) {
                         Input_StartJoyConfig(1);
                     } else if (cmd == CMD_CONTROLS_P2_KEYS) {
-                        Input_LaunchKeyConfig(2);
+                        Input_StartKeyConfig(2);
                     } else if (cmd == CMD_CONTROLS_P2_JOY) {
                         Input_StartJoyConfig(2);
                     } else if (cmd == CMD_VIDEO_ASPECT_TOGGLE) {
@@ -342,6 +393,10 @@ int main(int argc, char* argv[]) {
                         Video_ToggleFullscreen();
                     } else if (cmd == CMD_VIDEO_SCREENSHOT) {
                         Video_SaveScreenshot();
+                    } else if (cmd == CMD_VIDEO_FILTER_XBRZ) {
+                        Video_ToggleFilter();
+                        Menu_UpdateFilterLabel(Video_IsFilterEnabled());
+                        SaveIniSettings();
                     } else if (cmd == CMD_AUDIO_MUTE) {
                         Audio_ToggleMute();
                     } else if (cmd == CMD_AUDIO_FREQ_11025) {
@@ -436,12 +491,13 @@ int main(int argc, char* argv[]) {
         // Render Menu Bar (Windowed)
         Menu_Render(Video_GetRenderer(), Video_IsFullscreen(), VISIBLE_WIDTH);
 
-        // Gamepad Configuration In-Engine Modal Overlay
+        // Input Configuration In-Engine Modal Overlay (Keyboard or Gamepad)
         Input_RenderConfigModal(Video_GetRenderer());
 
         Video_Present();
     }
 
+    SaveIniSettings();
     prosystem_Close();
     Input_Shutdown();
     Audio_Shutdown();
@@ -450,4 +506,3 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
-

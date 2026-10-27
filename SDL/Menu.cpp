@@ -33,7 +33,8 @@ void Menu_Init() {
         { "Video", 202, 44, {
             { "Aspect: 4:3 Preserved", CMD_VIDEO_ASPECT_TOGGLE },
             { "Fullscreen (F11)", CMD_VIDEO_FULLSCREEN },
-            { "Take Screenshot (F12)", CMD_VIDEO_SCREENSHOT }
+            { "Take Screenshot (F12)", CMD_VIDEO_SCREENSHOT },
+            { "xBRZ Filter [ ]", CMD_VIDEO_FILTER_XBRZ }
         }},
         { "Audio", 250, 44, {
             { "Mute / Unmute", CMD_AUDIO_MUTE },
@@ -120,6 +121,12 @@ void Menu_UpdateSaveSlotLabel(int slot) {
 void Menu_UpdateAspectLabel(bool preserved) {
     if (g_menus.size() > 3 && !g_menus[3].items.empty()) {
         g_menus[3].items[0].label = preserved ? "Aspect: 4:3 Preserved" : "Aspect: Stretched Fill";
+    }
+}
+
+void Menu_UpdateFilterLabel(bool enabled) {
+    if (g_menus.size() > 3 && g_menus[3].items.size() > 3) {
+        g_menus[3].items[3].label = enabled ? "xBRZ Filter [x]" : "xBRZ Filter [ ]";
     }
 }
 
