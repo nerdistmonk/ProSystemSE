@@ -1,25 +1,4 @@
 // ----------------------------------------------------------------------------
-//   ___  ___  ___  ___       ___  ____  ___  _  _
-//  /__/ /__/ /  / /__  /__/ /__    /   /_   / |/ /
-// /    / \  /__/ ___/ ___/ ___/   /   /__  /    /  emulator
-//
-// ----------------------------------------------------------------------------
-// Copyright 2005 Greg Stanton
-// 
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; either version 2 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// ----------------------------------------------------------------------------
 // Palette.h
 // ----------------------------------------------------------------------------
 #include "Palette.h"
@@ -96,29 +75,24 @@ byte palette_data[PALETTE_SIZE] = {
 // ----------------------------------------------------------------------------
 // Load
 // ----------------------------------------------------------------------------
-bool palette_Load(std::string filename) {
-  if(filename.empty( ) || filename.length( ) == 0) {
-    logger_LogError(IDS_PALETTE1,"");
-    return false;
-  }
-  
-  logger_LogInfo(IDS_PALETTE2,filename);
+bool palette_Load(std::string filename) {  
+    if (filename.empty()) {  
+        return false;  
+    }  
 
-  FILE* file = fopen(filename.c_str( ), "rb");
-  if(file == NULL) {
-    logger_LogError(IDS_PALETTE3,filename);
-    return false;
-  }  
-  
-  if(fread(palette_data, 1, PALETTE_SIZE, file) != PALETTE_SIZE) {
-    fclose(file);
-    logger_LogError(IDS_PALETTE4,"");
-    return false;
-  }
-  
-  fclose(file);
-  palette_filename = filename;
-  return true;
+    FILE* file = fopen(filename.c_str(), "rb");  
+    if (file == NULL) {  
+        return false;  
+    }   
+
+    if (fread(palette_data, 1, PALETTE_SIZE, file) != PALETTE_SIZE) {  
+        fclose(file);  
+        return false;  
+    }  
+
+    fclose(file);  
+    palette_filename = filename;  
+    return true;  
 }
 
 // ----------------------------------------------------------------------------

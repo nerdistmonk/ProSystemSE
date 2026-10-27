@@ -28,7 +28,6 @@
 #include "Memory.h"
 #include "Hash.h"
 #include "Archive.h"
-#include "Logger.h"
 #include "Common.h"
 
 std::string cartridge_title;
@@ -319,7 +318,6 @@ void cartridge_Release() {
 // ----------------------------------------------------------------------------
 static bool cartridge_Load(const byte* data, uint size) {
     if (size <= 128) {
-        logger_LogError(IDS_CARTRIDGE1, "");
         return false;
     }
 
@@ -332,7 +330,6 @@ static bool cartridge_Load(const byte* data, uint size) {
     }
 
     if (cartridge_CC2(header)) {
-        logger_LogError(IDS_CARTRIDGE9, "");
         return false;
     }
 
@@ -361,38 +358,32 @@ static bool cartridge_Load(const byte* data, uint size) {
 // ----------------------------------------------------------------------------
 bool cartridge_Load(std::string filename) {
     if (filename.empty()) {
-        logger_LogError(IDS_CARTRIDGE2, "");
         return false;
     }
 
     cartridge_Release();
-    logger_LogInfo(IDS_CARTRIDGE8, filename);
 
     byte* data = NULL;
     uint size = archive_GetUncompressedFileSize(filename);
     if (size == 0) {
         FILE* file = fopen(filename.c_str(), "rb");
         if (file == NULL) {
-            logger_LogError(IDS_CARTRIDGE3, filename);
             return false;
         }
 
         if (fseek(file, 0, SEEK_END)) {
             fclose(file);
-            logger_LogError(IDS_CARTRIDGE4, "");
             return false;
         }
         size = ftell(file);
         if (fseek(file, 0, SEEK_SET)) {
             fclose(file);
-            logger_LogError(IDS_CARTRIDGE5, "");
             return false;
         }
 
         data = new byte[size];
         if (fread(data, 1, size, file) != size && ferror(file)) {
             fclose(file);
-            logger_LogError(IDS_CARTRIDGE6, "");
             cartridge_Release();
             delete[] data;
             return false;
@@ -406,7 +397,6 @@ bool cartridge_Load(std::string filename) {
     }
 
     if (!cartridge_Load(data, size)) {
-        logger_LogError(IDS_CARTRIDGE7, "");
         delete[] data;
         return false;
     }
@@ -417,4 +407,3 @@ bool cartridge_Load(std::string filename) {
     cartridge_filename = filename;
     return true;
 }
-

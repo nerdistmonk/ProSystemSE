@@ -1,25 +1,4 @@
 // ----------------------------------------------------------------------------
-//   ___  ___  ___  ___       ___  ____  ___  _  _
-//  /__/ /__/ /  / /__  /__/ /__    /   /_   / |/ /
-// /    / \  /__/ ___/ ___/ ___/   /   /__  /    /  emulator
-//
-// ----------------------------------------------------------------------------
-// Copyright 2003, 2004 Greg Stanton
-// 
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; either version 2 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// ----------------------------------------------------------------------------
 // ProSystem.cpp
 // ----------------------------------------------------------------------------
 #include "ProSystem.h"
@@ -119,189 +98,168 @@ void prosystem_ExecuteFrame(const byte* input) {
 // ----------------------------------------------------------------------------
 // Save
 // ----------------------------------------------------------------------------
-bool prosystem_Save(std::string filename, bool compress) {
-  if(filename.empty( ) || filename.length( ) == 0) {
-    logger_LogError(IDS_PROSYSTEM1,"");
-    return false;
-  }
+bool prosystem_Save(std::string filename, bool compress) {  
+    if (filename.empty()) {  
+        return false;  
+    }  
 
-  logger_LogInfo(IDS_PROSYSTEM2,filename);
-  
-  byte buffer[32829] = {0};
-  uint size = 0;
-  
-  uint index;
-  for(index = 0; index < 16; index++) {
-    buffer[size + index] = PRO_SYSTEM_STATE_HEADER[index];
-  }
-  size += 16;
-  
-  buffer[size++] = 1;
-  for(index = 0; index < 4; index++) {
-    buffer[size + index] = 0;
-  }
-  size += 4;
+    byte buffer[32829] = {0};  
+    uint size = 0;  
 
-  for(index = 0; index < 32; index++) {
-    buffer[size + index] = cartridge_digest[index];
-  }
-  size += 32;
+    uint index;  
+    for (index = 0; index < 16; index++) {  
+        buffer[size + index] = PRO_SYSTEM_STATE_HEADER[index];  
+    }  
+    size += 16;  
 
-  buffer[size++] = sally_a;
-  buffer[size++] = sally_x;
-  buffer[size++] = sally_y;
-  buffer[size++] = sally_p;
-  buffer[size++] = sally_s;
-  buffer[size++] = sally_pc.b.l;
-  buffer[size++] = sally_pc.b.h;
-  buffer[size++] = cartridge_bank;
+    buffer[size++] = 1;  
+    for (index = 0; index < 4; index++) {  
+        buffer[size + index] = 0;  
+    }  
+    size += 4;  
 
-  for(index = 0; index < 16384; index++) {
-    buffer[size + index] = memory_ram[index];
-  }
-  size += 16384;
-  
-  if(cartridge_type == CARTRIDGE_TYPE_SUPERCART_RAM) {
-    for(index = 0; index < 16384; index++) {
-      buffer[size + index] = memory_ram[16384 + index];
-    } 
-    size += 16384;
-  }
-  
-  if(!compress) {
-    FILE* file = fopen(filename.c_str( ), "wb");
-    if(file == NULL) {
-      logger_LogError(IDS_PROSYSTEM3,filename);
-      return false;
-    }
-  
-    if(fwrite(buffer, 1, size, file) != size) {
-      fclose(file);
-      logger_LogError(IDS_PROSYSTEM4,filename);
-      return false;
-    }
-  
-    fclose(file);
-  }
-  else {
-    if(!archive_Compress(filename.c_str( ), "Save.sav", buffer, size)) {
-      logger_LogError(IDS_PROSYSTEM5, filename);
-      return false;
-    }
-  }
-  return true;
-}
+    for (index = 0; index < 32; index++) {  
+        buffer[size + index] = cartridge_digest[index];  
+    }  
+    size += 32;  
+
+    buffer[size++] = sally_a;  
+    buffer[size++] = sally_x;  
+    buffer[size++] = sally_y;  
+    buffer[size++] = sally_p;  
+    buffer[size++] = sally_s;  
+    buffer[size++] = sally_pc.b.l;  
+    buffer[size++] = sally_pc.b.h;  
+    buffer[size++] = cartridge_bank;  
+
+    for (index = 0; index < 16384; index++) {  
+        buffer[size + index] = memory_ram[index];  
+    }  
+    size += 16384;  
+
+    if (cartridge_type == CARTRIDGE_TYPE_SUPERCART_RAM) {  
+        for (index = 0; index < 16384; index++) {  
+            buffer[size + index] = memory_ram[16384 + index];  
+        }   
+        size += 16384;  
+    }  
+
+    if (!compress) {  
+        FILE* file = fopen(filename.c_str(), "wb");  
+        if (file == NULL) {  
+            return false;  
+        }  
+
+        if (fwrite(buffer, 1, size, file) != size) {  
+            fclose(file);  
+            return false;  
+        }  
+
+        fclose(file);  
+    }  
+    else {  
+        if (!archive_Compress(filename.c_str(), "Save.sav", buffer, size)) {  
+            return false;  
+        }  
+    }  
+    return true;  
+}  
 
 // ----------------------------------------------------------------------------
 // Load
 // ----------------------------------------------------------------------------
-bool prosystem_Load(const std::string filename) {
-  if(filename.empty( ) || filename.length( ) == 0) {
-    logger_LogError(IDS_PROSYSTEM1,"");    
-    return false;
-  }
 
- 
-  logger_LogInfo(IDS_PROSYSTEM6,filename);
-  
-  byte buffer[32829] = {0};
-  uint size = archive_GetUncompressedFileSize(filename);
-  if(size == 0) {
-    FILE* file = fopen(filename.c_str( ), "rb");
-    if(file == NULL) {
-      logger_LogError(IDS_PROSYSTEM7,filename);
-      return false;
-    }
+bool prosystem_Load(const std::string filename) {  
+    if (filename.empty()) {  
+        return false;  
+    }  
 
-    if(fseek(file, 0, SEEK_END)) {
-      fclose(file);
-      logger_LogError(IDS_PROSYSTEM8,"");
-      return false;
-    }
-  
-    size = ftell(file);
-    if(fseek(file, 0, SEEK_SET)) {
-      fclose(file);
-      logger_LogError(IDS_PROSYSTEM9,"");
-      return false;
-    }
+    byte buffer[32829] = {0};  
+    uint size = archive_GetUncompressedFileSize(filename);  
+    if (size == 0) {  
+        FILE* file = fopen(filename.c_str(), "rb");  
+        if (file == NULL) {  
+            return false;  
+        }  
 
-    if(size != 16445 && size != 32829) {
-      fclose(file);
-      logger_LogError(IDS_PROSYSTEM10,"");
-      return false;
-    }
-  
-    if(fread(buffer, 1, size, file) != size && ferror(file)) {
-      fclose(file);
-      logger_LogError(IDS_PROSYSTEM11,"");
-      return false;
-    }
-    fclose(file);
-  }  
-  else if(size == 16445 || size == 32829) {
-    archive_Uncompress(filename, buffer, size);
-  }
-  else {
-    logger_LogError(IDS_PROSYSTEM12,"");
-    return false;
-  }
+        if (fseek(file, 0, SEEK_END)) {  
+            fclose(file);  
+            return false;  
+        }  
 
-  uint offset = 0;
-  uint index;
-  for(index = 0; index < 16; index++) {
-    if(buffer[offset + index] != PRO_SYSTEM_STATE_HEADER[index]) {
-      logger_LogError(IDS_PROSYSTEM13,"");
-      return false;
-    }
-  }
-  offset += 16;
-  byte version = buffer[offset++];
-  
-  uint date = 0;
-  for(index = 0; index < 4; index++) {
-  }
-  offset += 4;
-  
-  prosystem_Reset( );
-  
-  char digest[33] = {0};
-  for(index = 0; index < 32; index++) {
-    digest[index] = buffer[offset + index];
-  }
-  offset += 32;
-  if(cartridge_digest != std::string(digest)) {
-    logger_LogError(IDS_PROSYSTEM14, "[" + std::string(digest) + "] [" + cartridge_digest + "].");
-    return false;
-  }
-  
-  sally_a = buffer[offset++];
-  sally_x = buffer[offset++];
-  sally_y = buffer[offset++];
-  sally_p = buffer[offset++];
-  sally_s = buffer[offset++];
-  sally_pc.b.l = buffer[offset++];
-  sally_pc.b.h = buffer[offset++];
-  
-  cartridge_StoreBank(buffer[offset++]);
+        size = ftell(file);  
+        if (fseek(file, 0, SEEK_SET)) {  
+            fclose(file);  
+            return false;  
+        }  
 
-  for(index = 0; index < 16384; index++) {
-    memory_ram[index] = buffer[offset + index];
-  }
-  offset += 16384;
+        if (size != 16445 && size != 32829) {  
+            fclose(file);  
+            return false;  
+        }  
 
-  if(cartridge_type == CARTRIDGE_TYPE_SUPERCART_RAM) {
-    if(size != 32829) {
-      logger_LogError(IDS_PROSYSTEM15,"");
-      return false;
-    }
-    for(index = 0; index < 16384; index++) {
-      memory_ram[16384 + index] = buffer[offset + index];
-    }
-    offset += 16384; 
-  }  
+        if (fread(buffer, 1, size, file) != size && ferror(file)) {  
+            fclose(file);  
+            return false;  
+        }  
+        fclose(file);  
+    }   
+    else if (size == 16445 || size == 32829) {  
+        archive_Uncompress(filename, buffer, size);  
+    }  
+    else {  
+        return false;  
+    }  
 
-  return true;
+    uint offset = 0;  
+    uint index;  
+    for (index = 0; index < 16; index++) {  
+        if (buffer[offset + index] != PRO_SYSTEM_STATE_HEADER[index]) {  
+            return false;  
+        }  
+    }  
+    offset += 16;  
+    byte version = buffer[offset++];  
+
+    offset += 4;  
+
+    prosystem_Reset();  
+
+    char digest[33] = {0};  
+    for (index = 0; index < 32; index++) {  
+        digest[index] = buffer[offset + index];  
+    }  
+    offset += 32;  
+    if (cartridge_digest != std::string(digest)) {  
+        return false;  
+    }  
+
+    sally_a = buffer[offset++];  
+    sally_x = buffer[offset++];  
+    sally_y = buffer[offset++];  
+    sally_p = buffer[offset++];  
+    sally_s = buffer[offset++];  
+    sally_pc.b.l = buffer[offset++];  
+    sally_pc.b.h = buffer[offset++];  
+
+    cartridge_StoreBank(buffer[offset++]);  
+
+    for (index = 0; index < 16384; index++) {  
+        memory_ram[index] = buffer[offset + index];  
+    }  
+    offset += 16384;  
+
+    if (cartridge_type == CARTRIDGE_TYPE_SUPERCART_RAM) {  
+        if (size != 32829) {  
+            return false;  
+        }  
+        for (index = 0; index < 16384; index++) {  
+            memory_ram[16384 + index] = buffer[offset + index];  
+        }  
+        offset += 16384;   
+    }   
+
+    return true;  
 }
 
 // ----------------------------------------------------------------------------

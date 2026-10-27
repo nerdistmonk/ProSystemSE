@@ -1,25 +1,4 @@
 // ----------------------------------------------------------------------------
-//   ___  ___  ___  ___       ___  ____  ___  _  _
-//  /__/ /__/ /  / /__  /__/ /__    /   /_   / |/ /
-// /    / \  /__/ ___/ ___/ ___/   /   /__  /    /  emulator
-//
-// ----------------------------------------------------------------------------
-// Copyright 2005 Greg Stanton
-// 
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; either version 2 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// ----------------------------------------------------------------------------
 // Database.cpp
 // ----------------------------------------------------------------------------
 #include "Database.h"
@@ -44,61 +23,58 @@ void database_Initialize( ) {
 // ----------------------------------------------------------------------------
 // Load
 // ----------------------------------------------------------------------------
-bool database_Load(std::string digest) {  
-  if (!database_enabled) return false;
+bool database_Load(std::string digest) {   
+    if (!database_enabled) return false;  
 
-  logger_LogInfo(IDS_DATABASE1, database_filename);  
-  
-  FILE* file = fopen(database_filename.c_str(), "r");  
-  if (file == NULL) {  
-    logger_LogError(IDS_DATABASE2, "");  
-    return false;  
-  }  
-  
-  std::string targetDigest = digest;  
-  std::transform(targetDigest.begin(), targetDigest.end(), targetDigest.begin(), ::tolower);  
-  
-  char buffer[256];  
-  while (fgets(buffer, sizeof(buffer), file) != NULL) {  
-    std::string line = buffer;  
-    if (line.length() >= 33 && line[0] == '[') {  
-      std::string lineDigest = line.substr(1, 32);  
-      std::transform(lineDigest.begin(), lineDigest.end(), lineDigest.begin(), ::tolower);  
-  
-      if (lineDigest == targetDigest) {  
-        while (fgets(buffer, sizeof(buffer), file) != NULL) {  
-          std::string prop = common_Trim(common_Remove(common_Remove(buffer, '\n'), '\r'));  
-          if (prop.empty() || prop[0] == '[') {  
-            break; // End of this ROM's section
-          }  
-          size_t eqPos = prop.find('=');  
-          if (eqPos != std::string::npos) {  
-            std::string key = common_Trim(prop.substr(0, eqPos));  
-            std::string val = common_Trim(prop.substr(eqPos + 1));  
-            if (key == "title") cartridge_title = val;  
-            else if (key == "type") cartridge_type = common_ParseByte(val);  
-            else if (key == "pokey") cartridge_pokey = common_ParseBool(val);  
-            else if (key == "controller1") cartridge_controller[0] = common_ParseByte(val);  
-            else if (key == "controller2") cartridge_controller[1] = common_ParseByte(val);  
-            else if (key == "region") cartridge_region = common_ParseByte(val);  
-            else if (key == "flags") cartridge_flags = common_ParseUint(val);
-            else if (key == "crossx") cartridge_crossx = common_ParseInt(val);
-            else if (key == "crossy") cartridge_crossy = common_ParseInt(val);
-            else if (key == "hsc") cartridge_hsc = common_ParseBool(val);
-            else if (key == "xm") cartridge_xm = common_ParseBool(val);
-            else if (key == "pokey450") cartridge_pokey450 = common_ParseBool(val);
-            else if (key == "hblank") cartridge_hblank = common_ParseByte(val);
-            else if (key == "dualanalog") cartridge_dualanalog = common_ParseBool(val);
-            else if (key == "leftswitch") cartridge_leftswitch = common_ParseBool(val);
-            else if (key == "rightswitch") cartridge_rightswitch = common_ParseBool(val);
-            else if (key == "swapbuttons") cartridge_swapbuttons = common_ParseBool(val);
-          }  
-        }  
-        fclose(file);  
-        return true;  
-      }  
-    }  
-  }  
-  fclose(file);  
-  return false;  
+    FILE* file = fopen(database_filename.c_str(), "r");   
+    if (file == NULL) {   
+        return false;   
+    }   
+
+    std::string targetDigest = digest;   
+    std::transform(targetDigest.begin(), targetDigest.end(), targetDigest.begin(), ::tolower);   
+
+    char buffer[256];   
+    while (fgets(buffer, sizeof(buffer), file) != NULL) {   
+        std::string line = buffer;   
+        if (line.length() >= 33 && line[0] == '[') {   
+            std::string lineDigest = line.substr(1, 32);   
+            std::transform(lineDigest.begin(), lineDigest.end(), lineDigest.begin(), ::tolower);   
+
+            if (lineDigest == targetDigest) {   
+                while (fgets(buffer, sizeof(buffer), file) != NULL) {   
+                    std::string prop = common_Trim(common_Remove(common_Remove(buffer, '\n'), '\r'));   
+                    if (prop.empty() || prop[0] == '[') {   
+                        break; // End of this ROM's section  
+                    }   
+                    size_t eqPos = prop.find('=');   
+                    if (eqPos != std::string::npos) {   
+                        std::string key = common_Trim(prop.substr(0, eqPos));   
+                        std::string val = common_Trim(prop.substr(eqPos + 1));   
+                        if (key == "title") cartridge_title = val;   
+                        else if (key == "type") cartridge_type = common_ParseByte(val);   
+                        else if (key == "pokey") cartridge_pokey = common_ParseBool(val);   
+                        else if (key == "controller1") cartridge_controller[0] = common_ParseByte(val);   
+                        else if (key == "controller2") cartridge_controller[1] = common_ParseByte(val);   
+                        else if (key == "region") cartridge_region = common_ParseByte(val);   
+                        else if (key == "flags") cartridge_flags = common_ParseUint(val);  
+                        else if (key == "crossx") cartridge_crossx = common_ParseInt(val);  
+                        else if (key == "crossy") cartridge_crossy = common_ParseInt(val);  
+                        else if (key == "hsc") cartridge_hsc = common_ParseBool(val);  
+                        else if (key == "xm") cartridge_xm = common_ParseBool(val);  
+                        else if (key == "pokey450") cartridge_pokey450 = common_ParseBool(val);  
+                        else if (key == "hblank") cartridge_hblank = common_ParseByte(val);  
+                        else if (key == "dualanalog") cartridge_dualanalog = common_ParseBool(val);  
+                        else if (key == "leftswitch") cartridge_leftswitch = common_ParseBool(val);  
+                        else if (key == "rightswitch") cartridge_rightswitch = common_ParseBool(val);  
+                        else if (key == "swapbuttons") cartridge_swapbuttons = common_ParseBool(val);  
+                    }   
+                }   
+                fclose(file);   
+                return true;   
+            }   
+        }   
+    }   
+    fclose(file);   
+    return false;   
 }

@@ -1,29 +1,6 @@
-// ----------------------------------------------------------------------------
-//   ___  ___  ___  ___       ___  ____  ___  _  _
-//  /__/ /__/ /  / /__  /__/ /__    /   /_   / |/ /
-// /    / \  /__/ ___/ ___/ ___/   /   /__  /    /  emulator
-//
-// ----------------------------------------------------------------------------
-// Copyright 2005 Greg Stanton
-// 
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; either version 2 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-// ----------------------------------------------------------------------------
-// Cartridge.h
-// ----------------------------------------------------------------------------
 #ifndef CARTRIDGE_H
 #define CARTRIDGE_H
+
 #define CARTRIDGE_TYPE_NORMAL 0
 #define CARTRIDGE_TYPE_SUPERCART 1
 #define CARTRIDGE_TYPE_SUPERCART_LARGE 2
@@ -36,6 +13,7 @@
 #define CARTRIDGE_CONTROLLER_LIGHTGUN 2
 #define CARTRIDGE_WSYNC_MASK 2
 #define CARTRIDGE_CYCLE_STEALING_MASK 1
+
 #ifndef NULL
 #define NULL 0
 #endif
@@ -45,7 +23,6 @@
 #include "Equates.h"
 #include "Memory.h"
 #include "Hash.h"
-#include "Logger.h"
 #include "Pokey.h"
 #include "Archive.h"
 
@@ -54,11 +31,11 @@ typedef unsigned short word;
 typedef unsigned int uint;
 
 extern bool cartridge_Load(std::string filename);
-extern void cartridge_Store( );
+extern void cartridge_Store();
 extern void cartridge_StoreBank(byte bank);
 extern void cartridge_Write(word address, byte data);
-extern bool cartridge_IsLoaded( );
-extern void cartridge_Release( );
+extern bool cartridge_IsLoaded();
+extern void cartridge_Release();
 extern std::string cartridge_digest;
 extern std::string cartridge_title;
 extern std::string cartridge_description;
@@ -72,19 +49,17 @@ extern byte cartridge_controller[2];
 extern byte cartridge_bank;
 extern uint cartridge_flags;
 
-// Extra per-cartridge settings from ProSystem.dat. These are parsed and stored
-// only; nothing in the core consumes them yet. All are reset to the defaults
-// below on every cartridge load, so values never leak from one ROM to the next.
-extern int cartridge_crossx;        // light gun X offset, default 0
-extern int cartridge_crossy;        // light gun Y offset, default 0 (may be negative)
-extern bool cartridge_hsc;          // High Score Cartridge support, default false
-extern bool cartridge_xm;           // XM expansion, default false
-extern bool cartridge_pokey450;     // POKEY mapped at $0450, default false
-extern byte cartridge_hblank;       // hblank width override, default 0 (none)
-extern bool cartridge_dualanalog;   // dual analog controller, default false
-extern bool cartridge_leftswitch;   // left difficulty switch default, default false
-extern bool cartridge_rightswitch;  // right difficulty switch default, default false
-extern bool cartridge_swapbuttons;  // swap fire buttons, default false
-extern void cartridge_ResetExtras( );
+// Extra per-cartridge settings from ProSystem.dat
+extern int cartridge_crossx;
+extern int cartridge_crossy;
+extern bool cartridge_hsc;
+extern bool cartridge_xm;
+extern bool cartridge_pokey450;
+extern byte cartridge_hblank;
+extern bool cartridge_dualanalog;
+extern bool cartridge_leftswitch;
+extern bool cartridge_rightswitch;
+extern bool cartridge_swapbuttons;
+extern void cartridge_ResetExtras();
 
-#endif
+#endif // CARTRIDGE_H
