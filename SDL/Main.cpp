@@ -5,6 +5,7 @@
 #include <string>
 #include <filesystem>
 #include <algorithm>
+#include <cctype>
 
 #include "ProSystem.h"
 #include "Cartridge.h"
@@ -146,6 +147,43 @@ bool LoadRomAndApplyDatabase(const std::string& path) {
 }
 
 int main(int argc, char* argv[]) {
+    bool startFullscreen = false;
+    int targetSampleRate = 44100;
+    int forceRegion = 0; // 0 = Auto/ROM default, 1 = NTSC, 2 = PAL
+    std::string romPathFromArgs = "";
+
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+
+        if (arg == "-f" || arg == "--fullscreen") {
+            startFullscreen = true;
+        } else if ((arg == "-s" || arg == "--samplerate") && i + 1 < argc) {
+            targetSampleRate = std::atoi(argv[++i]);
+        } else if ((arg == "-r" || arg == "--region") && i + 1 < argc) {
+            std::string reg = argv[++i];
+            for (auto& c : reg) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+            if (reg == "ntsc" || reg == "60") {
+                forceRegion = 1;
+            } else if (reg == "pal" || reg == "50") {
+                forceRegion = 2;
+            } else {
+                std::cerr << "Warning: Unknown region '" << reg << "'. Use 'ntsc' or 'pal'.\n";
+            }
+        } else if (arg == "-h" || arg == "--help") {
+            std::cout << "Usage: prosystem [options] [rom_path]\n\n"
+                      << "Options:\n"
+                      << "  -f, --fullscreen           Start in borderless fullscreen\n"
+                      << "  -s, --samplerate <rate>    Set audio sample rate (11025, 22050, 44100, 48000)\n"
+                      << "  -r, --region <ntsc|pal>    Force NTSC (60Hz) or PAL (50Hz) timing\n"
+                      << "  -h, --help                 Show this help message\n";
+            return 0;
+        } else if (arg[0] != '-') {
+            romPathFromArgs = arg;
+        } else {
+            std::cerr << "Unknown option: " << arg << "\n";
+        }
+    }
+
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD)) {
         std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
         return 1;
@@ -156,20 +194,50 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    if (startFullscreen) {
+        Video_ToggleFullscreen();
+    }
+
     database_Initialize();
     LoadConfigHistory();
     LoadBios(g_configDir);
 
-    Audio_Init(31440, 44100);
+    Audio_Init(31440, targetSampleRate);
     Menu_Init();
+    Menu_UpdateAudioFreqLabel(targetSampleRate);
+
+    // Synchronize Region GUI and frequency states from CLI flags immediately
+    if (forceRegion == 1) {
+        prosystem_frequency = 60;
+        Audio_SetSourceFrequency(524 * 60);
+        Menu_UpdateRegionLabel(1);
+    } else if (forceRegion == 2) {
+        prosystem_frequency = 50;
+        Audio_SetSourceFrequency(524 * 50);
+        Menu_UpdateRegionLabel(2);
+    } else {
+        Menu_UpdateRegionLabel(0);
+    }
+
     Input_Init(g_configDir);
 
     std::string currentRomPath = "";
-    if (argc >= 2) {
-        currentRomPath = argv[1];
+    if (!romPathFromArgs.empty()) {
+        currentRomPath = romPathFromArgs;
         if (LoadRomAndApplyDatabase(currentRomPath)) {
             Audio_Clear();
             SaveConfigHistory(currentRomPath);
+
+            // Re-enforce override if provided via CLI after database_Load/reset
+            if (forceRegion == 1) {
+                prosystem_frequency = 60;
+                Audio_SetSourceFrequency(524 * 60);
+                Menu_UpdateRegionLabel(1);
+            } else if (forceRegion == 2) {
+                prosystem_frequency = 50;
+                Audio_SetSourceFrequency(524 * 50);
+                Menu_UpdateRegionLabel(2);
+            }
         }
     }
 
@@ -241,12 +309,15 @@ int main(int argc, char* argv[]) {
                         prosystem_Pause(!prosystem_paused);
                         Audio_Clear();
                     } else if (cmd == CMD_EMU_REGION_AUTO) {
+                        forceRegion = 0;
                         Menu_UpdateRegionLabel(0);
                     } else if (cmd == CMD_EMU_REGION_NTSC) {
+                        forceRegion = 1;
                         Menu_UpdateRegionLabel(1);
                         prosystem_frequency = 60;
                         Audio_SetSourceFrequency(524 * 60);
                     } else if (cmd == CMD_EMU_REGION_PAL) {
+                        forceRegion = 2;
                         Menu_UpdateRegionLabel(2);
                         prosystem_frequency = 50;
                         Audio_SetSourceFrequency(524 * 50);
@@ -323,6 +394,16 @@ int main(int argc, char* argv[]) {
                 Audio_Clear();
                 currentRomPath = g_pendingRom.path;
                 SaveConfigHistory(currentRomPath);
+
+                if (forceRegion == 1) {
+                    prosystem_frequency = 60;
+                    Audio_SetSourceFrequency(524 * 60);
+                    Menu_UpdateRegionLabel(1);
+                } else if (forceRegion == 2) {
+                    prosystem_frequency = 50;
+                    Audio_SetSourceFrequency(524 * 50);
+                    Menu_UpdateRegionLabel(2);
+                }
             }
         }
 
@@ -369,3 +450,4 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
+
