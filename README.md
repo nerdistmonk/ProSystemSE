@@ -22,7 +22,7 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ```
 
-# Version 2.5b - October 26th, 2026
+# Version 2.5e - October 26th, 2026
 
 # Default Controls for gamepads
 
