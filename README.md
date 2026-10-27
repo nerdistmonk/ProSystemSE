@@ -22,7 +22,7 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ```
 
-# Version 2.5e - October 26th, 2026
+# Version 3.0 - October 27th, 2026
 
 # Default Controls for gamepads
 
@@ -63,6 +63,9 @@ Z / X: Console Reset / Select
 ```
 ```
 -s = set samplerate (11025,22050,44100,48000)
+```
+```
+-x = enable xbrz 2x filtering
 ```
 
 # Build Instructions:
