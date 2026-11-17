@@ -18,8 +18,32 @@ static SDL_Texture* g_texture = nullptr;
 static bool g_isFullscreen = false;
 static bool g_preserveAspect = true;
 static bool g_xbrzEnabled = false;
-static std::vector<uint32_t> g_scaledBuffer(VISIBLE_WIDTH * 2 * VISIBLE_HEIGHT * 2);
-static uint32_t g_pixelBuffer[VISIBLE_WIDTH * VISIBLE_HEIGHT];
+// The visible area is 223 lines for NTSC and 272 for PAL; buffers are sized for the larger
+static constexpr int MAX_VISIBLE_HEIGHT = 272;
+static int g_height = VISIBLE_HEIGHT;
+static std::vector<uint32_t> g_scaledBuffer(VISIBLE_WIDTH * 2 * MAX_VISIBLE_HEIGHT * 2);
+static uint32_t g_pixelBuffer[VISIBLE_WIDTH * MAX_VISIBLE_HEIGHT];
+
+static void Video_CreateTexture() {
+    if (g_texture) {
+        SDL_DestroyTexture(g_texture);
+        g_texture = nullptr;
+    }
+
+    int scale = g_xbrzEnabled ? 2 : 1;
+    g_texture = SDL_CreateTexture(g_renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
+                                  VISIBLE_WIDTH * scale, g_height * scale);
+    if (g_texture) {
+        SDL_SetTextureScaleMode(g_texture, SDL_SCALEMODE_NEAREST);
+    }
+}
+
+static void Video_SetLogicalSize() {
+    SDL_SetRenderLogicalPresentation(
+        g_renderer, VISIBLE_WIDTH, g_height,
+        g_preserveAspect ? SDL_LOGICAL_PRESENTATION_LETTERBOX : SDL_LOGICAL_PRESENTATION_STRETCH
+    );
+}
 
 bool Video_Init(const std::string& title, int windowWidth, int windowHeight) {
     g_window = SDL_CreateWindow(title.c_str(), windowWidth, windowHeight, SDL_WINDOW_RESIZABLE);
@@ -37,15 +61,14 @@ bool Video_Init(const std::string& title, int windowWidth, int windowHeight) {
     }
 
     SDL_SetRenderVSync(g_renderer, 1);
-    SDL_SetRenderLogicalPresentation(g_renderer, VISIBLE_WIDTH, VISIBLE_HEIGHT, SDL_LOGICAL_PRESENTATION_LETTERBOX);
+    Video_SetLogicalSize();
 
-    g_texture = SDL_CreateTexture(g_renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, VISIBLE_WIDTH, VISIBLE_HEIGHT);
+    Video_CreateTexture();
     if (!g_texture) {
         std::cerr << "SDL_CreateTexture Error: " << SDL_GetError() << std::endl;
         return false;
     }
 
-    SDL_SetTextureScaleMode(g_texture, SDL_SCALEMODE_NEAREST);
     return true;
 }
 
@@ -73,9 +96,19 @@ void Video_ClearScreen() {
 void Video_RenderFrame() {
     if (!g_renderer || !g_texture) return;
 
+    int height = static_cast<int>(maria_visibleArea.GetHeight());
+    if (height < 1) height = 1;
+    if (height > MAX_VISIBLE_HEIGHT) height = MAX_VISIBLE_HEIGHT;
+    if (height != g_height) {
+        g_height = height;
+        Video_SetLogicalSize();
+        Video_CreateTexture();
+        if (!g_texture) return;
+    }
+
     const int visibleOffset = (maria_visibleArea.top - maria_displayArea.top) * VISIBLE_WIDTH;
 
-    for (int i = 0; i < VISIBLE_WIDTH * VISIBLE_HEIGHT; ++i) {
+    for (int i = 0; i < VISIBLE_WIDTH * g_height; ++i) {
         uint8_t colorIdx = maria_surface[visibleOffset + i];
         uint8_t r = palette_data[colorIdx * 3 + 0];
         uint8_t g = palette_data[colorIdx * 3 + 1];
@@ -84,7 +117,7 @@ void Video_RenderFrame() {
     }
 
     if (g_xbrzEnabled) {
-        xbrz::scale(2, g_pixelBuffer, g_scaledBuffer.data(), VISIBLE_WIDTH, VISIBLE_HEIGHT, xbrz::ColorFormat::ARGB);
+        xbrz::scale(2, g_pixelBuffer, g_scaledBuffer.data(), VISIBLE_WIDTH, g_height, xbrz::ColorFormat::ARGB);
         SDL_UpdateTexture(g_texture, NULL, g_scaledBuffer.data(), (VISIBLE_WIDTH * 2) * sizeof(uint32_t));
     } else {
         SDL_UpdateTexture(g_texture, NULL, g_pixelBuffer, VISIBLE_WIDTH * sizeof(uint32_t));
@@ -118,10 +151,7 @@ bool Video_IsFullscreen() {
 void Video_ToggleAspectRatio() {
     if (!g_renderer) return;
     g_preserveAspect = !g_preserveAspect;
-    SDL_SetRenderLogicalPresentation(
-        g_renderer, VISIBLE_WIDTH, VISIBLE_HEIGHT,
-        g_preserveAspect ? SDL_LOGICAL_PRESENTATION_LETTERBOX : SDL_LOGICAL_PRESENTATION_STRETCH
-    );
+    Video_SetLogicalSize();
 }
 
 bool Video_IsAspectPreserved() {
@@ -154,18 +184,8 @@ void Video_ToggleFilter() {
 
     g_xbrzEnabled = !g_xbrzEnabled;
 
-    // Recreate streaming texture to match native 1x (320x240) or 2x (640x480)
-    if (g_texture) {
-        SDL_DestroyTexture(g_texture);
-    }
-
-    int width = g_xbrzEnabled ? (VISIBLE_WIDTH * 2) : VISIBLE_WIDTH;
-    int height = g_xbrzEnabled ? (VISIBLE_HEIGHT * 2) : VISIBLE_HEIGHT;
-
-    g_texture = SDL_CreateTexture(g_renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height);
-    if (g_texture) {
-        SDL_SetTextureScaleMode(g_texture, SDL_SCALEMODE_NEAREST);
-    }
+    // Recreate streaming texture to match native 1x or 2x
+    Video_CreateTexture();
 }
 
 void Video_SetFilter(bool enabled) {
