@@ -2595,3 +2595,53 @@ controller1=1
 controller2=1
 region=0
 flags=2
+[aefb78276913e8a166e460222e378fec]
+title=Beef Drop
+type=0
+pokey=1
+controller1=1
+controller2=1
+region=0
+flags=0
+[00688131ee74f6c84048c7fa5c71114a]
+title=Bentley Bear's Crystal Quest
+type=2
+pokey=0
+controller1=1
+controller2=1
+region=0
+flags=0
+pokey450=1
+[5d9ac066e685432825d968f166b042ec]
+title=Tiger-Heli
+type=2
+pokey=0
+controller1=1
+controller2=1
+region=0
+flags=0
+pokey450=1
+[cb6f27c7bcbe65b60595d6f54bd39348]
+title=Double Dragon (Sprite & Color Hack RC4)
+type=6
+pokey=0
+controller1=1
+controller2=1
+region=0
+flags=0
+[59ca19c4b024fdfcd25b75ac836c7749]
+title=Double Dragon (Sprite & Color Hack RC7)
+type=6
+pokey=0
+controller1=1
+controller2=1
+region=0
+flags=0
+[b3bc889e9cc498636990c5a4d980e85c]
+title=Rikki & Vikki
+type=7
+pokey=0
+controller1=1
+controller2=1
+region=0
+flags=0
