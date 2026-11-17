@@ -99,6 +99,12 @@ static bool cartridge_CC2(const byte* header) {
 // GetBankOffset
 // ----------------------------------------------------------------------------
 static uint cartridge_GetBankOffset(byte bank) {
+    // Supercart ROMs of 64K or less only have 4 banks; the bank select ignores bit 2.
+    if ((cartridge_type == CARTRIDGE_TYPE_SUPERCART ||
+         cartridge_type == CARTRIDGE_TYPE_SUPERCART_ROM ||
+         cartridge_type == CARTRIDGE_TYPE_SUPERCART_RAM) && cartridge_size <= 65536) {
+        return (bank & 3) * 16384;
+    }
     return bank * 16384;
 }
 
