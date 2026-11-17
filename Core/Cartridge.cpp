@@ -79,6 +79,8 @@ void cartridge_ResetExtras() {
 
 static byte* cartridge_buffer = NULL;
 static uint cartridge_size = 0;
+// Largest ROM window any mapper reads (Souper: 32 banks of 16K)
+static const uint CARTRIDGE_MAX_MAPPED_SIZE = 32 * 16384;
 
 // ----------------------------------------------------------------------------
 // HasHeader
@@ -459,12 +461,18 @@ static bool cartridge_Load(const byte* data, uint size) {
         cartridge_ReadHeader(header);
         size -= 128;
         offset = 128;
+        // The header's size field can disagree with the file (truncated or bad dump)
+        if (cartridge_size > size) {
+            cartridge_size = size;
+        }
     }
     else {
         cartridge_size = size;
     }
 
-    cartridge_buffer = new byte[cartridge_size];
+    // Zero-padded so bank mappings of a short ROM never read past the buffer
+    uint bufferSize = (cartridge_size > CARTRIDGE_MAX_MAPPED_SIZE) ? cartridge_size : CARTRIDGE_MAX_MAPPED_SIZE;
+    cartridge_buffer = new byte[bufferSize]();
     for (uint index = 0; index < cartridge_size; index++) {
         cartridge_buffer[index] = data[index + offset];
     }
