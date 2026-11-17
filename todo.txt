@@ -1,0 +1,25 @@
+**Portable build** (your current goal)
+- Ship `libSDL3.so.0` next to the binary and add `$ORIGIN` to the RUNPATH, or link SDL3 statically.
+- Save states go to the current directory, not beside the binary.
+- Decide whether the exe-dir `ProSystem.dat` should win over a stale one in `~/.config`.
+
+**Robustness issues from the sweep**
+- A failed ROM open closes the running game with no message. Non-A78 files like the UF2 should be rejected with a clear error.
+- An unset or unwritable `$HOME` crashes or writes to `/`.
+- `XDG_CONFIG_HOME` is ignored.
+- `-s` with an invalid sample rate gives silent audio.
+- The file-dialog callback has a possible data race.
+- A save state taken during BIOS boot loads inconsistently.
+
+**Emulation features not implemented**
+- YM2151, which may only matter if 1942 sounds incomplete.
+- POKEY timers and IRQ.
+- v4 header parsing would change nothing for it.
+- BupChip/CDF.
+- Banksets.
+- A 2600-mode fallback.
+- libretro's BIOS-aware save states.
+
+**Untested**
+- Audio was only hashed, never listened to, apart from your 1942 report.
+- Real gamepad hardware and PAL timing.
