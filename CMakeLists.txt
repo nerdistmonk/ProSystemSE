@@ -33,3 +33,15 @@ target_link_libraries(prosystem PRIVATE
     ZLIB::ZLIB
     ${MINIZIP_LIBRARIES}
 )
+
+# Copy runtime assets adjacent to the binary in the build directory
+add_custom_command(
+    TARGET my_target POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/ProSystem.dat"
+        "${CMAKE_CURRENT_SOURCE_DIR}/License.txt"
+        "${CMAKE_CURRENT_SOURCE_DIR}/README.md"
+        "${CMAKE_CURRENT_SOURCE_DIR}/gamecontrollerdb.txt"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shot.png"
+        "$<TARGET_FILE_DIR:my_target>/ProSystem.dat"
+)
