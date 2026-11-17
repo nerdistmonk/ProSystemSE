@@ -27,6 +27,8 @@
 bool riot_timing = false;
 word riot_timer = TIM64T;
 byte riot_intervals;
+// External state of the SWCHA pins; memory_ram[SWCHA]/[CTLSWA] hold the output latch and DDR.
+byte riot_swcha_input = 0xff;
 
 static bool riot_elapsed;
 static int riot_currentTime;
@@ -59,10 +61,10 @@ void riot_Reset(void) {
 // | 16       | Console      | Right Difficulty
 // +----------+--------------+-------------------------------------------------
 void riot_SetInput(const byte* input) {
-  (input[0x00])? memory_ram[SWCHA] = memory_ram[SWCHA] &~ 0x80: memory_ram[SWCHA] = memory_ram[SWCHA] | 0x80;
-  (input[0x01])? memory_ram[SWCHA] = memory_ram[SWCHA] &~ 0x40: memory_ram[SWCHA] = memory_ram[SWCHA] | 0x40;
-  (input[0x02])? memory_ram[SWCHA] = memory_ram[SWCHA] &~ 0x20: memory_ram[SWCHA] = memory_ram[SWCHA] | 0x20;
-  (input[0x03])? memory_ram[SWCHA] = memory_ram[SWCHA] &~ 0x10: memory_ram[SWCHA] = memory_ram[SWCHA] | 0x10;
+  (input[0x00])? riot_swcha_input = riot_swcha_input &~ 0x80: riot_swcha_input = riot_swcha_input | 0x80;
+  (input[0x01])? riot_swcha_input = riot_swcha_input &~ 0x40: riot_swcha_input = riot_swcha_input | 0x40;
+  (input[0x02])? riot_swcha_input = riot_swcha_input &~ 0x20: riot_swcha_input = riot_swcha_input | 0x20;
+  (input[0x03])? riot_swcha_input = riot_swcha_input &~ 0x10: riot_swcha_input = riot_swcha_input | 0x10;
   if(input[0x04]) {
     memory_ram[INPT0] = memory_ram[INPT0] |  0x80; 
     memory_ram[INPT4] = memory_ram[INPT4] &~ 0x80;
@@ -79,10 +81,10 @@ void riot_SetInput(const byte* input) {
     memory_ram[INPT1] = memory_ram[INPT1] &~ 0x80;
     memory_ram[INPT4] = memory_ram[INPT4] |  0x80;
   }
-  (input[0x06])? memory_ram[SWCHA] = memory_ram[SWCHA] &~ 0x08: memory_ram[SWCHA] = memory_ram[SWCHA] | 0x08;
-  (input[0x07])? memory_ram[SWCHA] = memory_ram[SWCHA] &~ 0x04: memory_ram[SWCHA] = memory_ram[SWCHA] | 0x04;
-  (input[0x08])? memory_ram[SWCHA] = memory_ram[SWCHA] &~ 0x02: memory_ram[SWCHA] = memory_ram[SWCHA] | 0x02;
-  (input[0x09])? memory_ram[SWCHA] = memory_ram[SWCHA] &~ 0x01: memory_ram[SWCHA] = memory_ram[SWCHA] | 0x01;
+  (input[0x06])? riot_swcha_input = riot_swcha_input &~ 0x08: riot_swcha_input = riot_swcha_input | 0x08;
+  (input[0x07])? riot_swcha_input = riot_swcha_input &~ 0x04: riot_swcha_input = riot_swcha_input | 0x04;
+  (input[0x08])? riot_swcha_input = riot_swcha_input &~ 0x02: riot_swcha_input = riot_swcha_input | 0x02;
+  (input[0x09])? riot_swcha_input = riot_swcha_input &~ 0x01: riot_swcha_input = riot_swcha_input | 0x01;
   if(input[0x0a]) {
     memory_ram[INPT2] = memory_ram[INPT2] |  0x80;  
     memory_ram[INPT5] = memory_ram[INPT5] &~ 0x80;

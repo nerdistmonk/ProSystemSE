@@ -49,6 +49,9 @@ byte memory_Read(word address) {
     byte tmp_byte;
 
     switch (address) {
+    case SWCHA:
+        // Output pins read back the latch; input pins read the external state.
+        return (memory_ram[SWCHA] & memory_ram[CTLSWA]) | (riot_swcha_input & ~memory_ram[CTLSWA]);
     case INTIM:
     case INTIM | 0x2:
         memory_ram[INTFLG] &= 0x7f;

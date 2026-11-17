@@ -39,5 +39,6 @@ extern void riot_UpdateTimer(byte cycles);
 extern bool riot_timing;
 extern word riot_timer;
 extern byte riot_intervals;
+extern byte riot_swcha_input;
 
 #endif
