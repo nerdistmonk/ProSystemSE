@@ -59,10 +59,10 @@ static const Vector SALLY_IRQ = {65535, 65534};
 
 static const byte SALLY_CYCLES[256] = {
 	7,6,0,0,0,3,5,0,3,2,2,2,0,4,6,0,
-	2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0,
+	2,5,0,0,0,4,6,0,2,4,2,0,0,4,7,0,
 	6,6,0,0,3,3,5,0,4,2,2,2,4,4,6,0,
 	2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0,
-	6,6,0,0,0,3,5,0,3,2,2,0,3,4,6,0,
+	6,6,0,0,0,3,5,0,3,2,2,2,3,4,6,0,
 	2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0,
 	6,6,0,0,0,3,5,0,4,2,2,0,5,4,6,0,
 	2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0,
@@ -319,6 +319,16 @@ static void sally_ANC( ) {
   sally_a &= memory_Read(sally_address.w);
   sally_Flags(sally_a);
   sally_p = (sally_p & ~SALLY_FLAG.C) | ((sally_a & 0x80) ? SALLY_FLAG.C : 0);
+}
+
+// ----------------------------------------------------------------------------
+// ALR (undocumented): AND immediate, then LSR A
+// ----------------------------------------------------------------------------
+static void sally_ALR( ) {
+  sally_a &= memory_Read(sally_address.w);
+  sally_p = (sally_p & ~SALLY_FLAG.C) | (sally_a & 1);
+  sally_a >>= 1;
+  sally_Flags(sally_a);
 }
 
 // ----------------------------------------------------------------------------
@@ -1164,6 +1174,11 @@ uint sally_ExecuteInstruction( ) {
     case 0x4a: 
       sally_LSRA( ); 
       break; 
+
+    case 0x4b: 
+      sally_Immediate( ); 
+      sally_ALR( ); 
+      break;
     
     case 0x4c: 
       sally_Absolute( );  
@@ -1642,6 +1657,7 @@ uint sally_ExecuteInstruction( ) {
       sally_SBC( ); 
       break;
 
+    case 0x1a:
     case 0xea:
       sally_NOP( );
       break;
