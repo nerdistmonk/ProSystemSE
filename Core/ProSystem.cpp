@@ -27,7 +27,7 @@ void prosystem_Reset( ) {
     maria_Clear( );
     maria_Reset( );
 	riot_Reset ( );
-    if(bios_enabled) {
+    if(bios_enabled && !bios_bypass) {
       bios_Store( );
     }
     else {
@@ -42,6 +42,7 @@ void prosystem_Reset( ) {
 // ExecuteFrame
 // ----------------------------------------------------------------------------
 void prosystem_ExecuteFrame(const byte* input) {
+  bool bios_restart = false;
   riot_SetInput(input);
   
   for(maria_scanline = 1; maria_scanline <= prosystem_scanlines; maria_scanline++) {
@@ -59,6 +60,10 @@ void prosystem_ExecuteFrame(const byte* input) {
       prosystem_cycles += (cycles << 2);
       if(riot_timing) {
         riot_UpdateTimer(cycles);
+      }
+      if(bios_Restarted(sally_pc.w)) {
+        bios_bypass = true;
+        bios_restart = true;
       }
       if(memory_ram[WSYNC] && !(cartridge_flags & CARTRIDGE_WSYNC_MASK)) {
         prosystem_cycles = 456;
@@ -78,6 +83,10 @@ void prosystem_ExecuteFrame(const byte* input) {
       if(riot_timing) {
         riot_UpdateTimer(cycles);
       }
+      if(bios_Restarted(sally_pc.w)) {
+        bios_bypass = true;
+        bios_restart = true;
+      }
       if(memory_ram[WSYNC] && !(cartridge_flags & CARTRIDGE_WSYNC_MASK)) {
         prosystem_cycles = 456;
         memory_ram[WSYNC] = false;
@@ -88,6 +97,11 @@ void prosystem_ExecuteFrame(const byte* input) {
     if(cartridge_pokey) {
       pokey_Process(2);
     }
+  }
+  if(bios_restart) {
+    fprintf(stderr, "BIOS rejected this cartridge (unsigned ROM); restarting without BIOS\n");
+    prosystem_Reset( );
+    return;
   }
   prosystem_frame++;
   if(prosystem_frame >= prosystem_frequency) {

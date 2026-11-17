@@ -28,6 +28,7 @@
 #include "Memory.h"
 #include "Hash.h"
 #include "Archive.h"
+#include "Bios.h"
 #include "Common.h"
 
 std::string cartridge_title;
@@ -329,6 +330,7 @@ static bool cartridge_Load(const byte* data, uint size) {
 
     cartridge_Release();
     cartridge_ResetExtras();
+    bios_bypass = false;
 
     byte header[128] = {0};
     for (int index = 0; index < 128; index++) {

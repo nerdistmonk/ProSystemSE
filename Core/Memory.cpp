@@ -84,7 +84,7 @@ void memory_Write(word address, byte data) {
             if (data == 22 && cartridge_IsLoaded()) {
                 cartridge_Store();
             }
-            else if (data == 2 && bios_enabled) {
+            else if (data == 2 && bios_enabled && !bios_bypass) {
                 bios_Store();
             }
             break;
