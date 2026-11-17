@@ -304,6 +304,7 @@ int main(int argc, char* argv[]) {
     bool running = true;
     bool leftDiffA = false;
     bool rightDiffA = false;
+    bool pausedByFocusLoss = false;
     int saveSlot = 1;
 
     SDL_Event event;
@@ -316,6 +317,22 @@ int main(int argc, char* argv[]) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_EVENT_QUIT) {
                 running = false;
+            }
+
+            if (event.type == SDL_EVENT_WINDOW_FOCUS_LOST) {
+                if (prosystem_active && !prosystem_paused) {
+                    prosystem_Pause(true);
+                    Audio_Clear();
+                    pausedByFocusLoss = true;
+                }
+            } else if (event.type == SDL_EVENT_WINDOW_FOCUS_GAINED) {
+                if (pausedByFocusLoss) {
+                    pausedByFocusLoss = false;
+                    if (prosystem_active) {
+                        prosystem_Pause(false);
+                        nextFrameTime = SDL_GetTicksNS();
+                    }
+                }
             }
 
             // Intercept modal configuration (keyboard or gamepad) if active
@@ -483,7 +500,7 @@ int main(int argc, char* argv[]) {
         } else if (!prosystem_active) {
             Video_RenderText(50.0f, 110.0f, "Press O or F2 to Load a ROM");
             SDL_Delay(16);
-        } else if (Input_IsConfigActive()) {
+        } else if (Input_IsConfigActive() || prosystem_paused) {
             Video_RenderFrame();
             SDL_Delay(16);
         }
