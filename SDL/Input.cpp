@@ -180,8 +180,12 @@ void Input_Init(const std::string& configDir) {
 
     // Load custom/community gamepad mappings
     std::string userDb = g_configDir + "/gamecontrollerdb.txt";
+    const char* basePath = SDL_GetBasePath();
+    std::string exeDb = basePath ? (std::string(basePath) + "gamecontrollerdb.txt") : "";
     if (fs::exists(userDb)) {
         SDL_AddGamepadMappingsFromFile(userDb.c_str());
+    } else if (!exeDb.empty() && fs::exists(exeDb)) {
+        SDL_AddGamepadMappingsFromFile(exeDb.c_str());
     } else if (fs::exists("gamecontrollerdb.txt")) {
         SDL_AddGamepadMappingsFromFile("gamecontrollerdb.txt");
     } else if (fs::exists("../gamecontrollerdb.txt")) {
