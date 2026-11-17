@@ -76,9 +76,11 @@ static byte pokey_audc[4];
 static byte pokey_audctl;
 static byte pokey_output[4];
 static byte pokey_outVol[4];
-static byte pokey_poly04[POKEY_POLY4_SIZE] = {1,1,0,1,1,1,0,0,0,0,1,0,1,0,0};
-static byte pokey_poly05[POKEY_POLY5_SIZE] = {0,0,1,1,0,0,0,1,1,1,1,0,0,1,0,1,0,1,1,0,1,1,1,0,1,0,0,0,0,0,1};
+static byte pokey_poly04[POKEY_POLY4_SIZE];
+static byte pokey_poly05[POKEY_POLY5_SIZE];
+static byte pokey_poly09[POKEY_POLY9_SIZE];
 static byte pokey_poly17[POKEY_POLY17_SIZE];
+static byte pokey_filterSample[2];
 static uint pokey_poly17Size;
 static uint pokey_polyAdjust;
 static uint pokey_poly04Cntr;
@@ -93,10 +95,44 @@ static uint pokey_baseMultiplier;
 // ----------------------------------------------------------------------------
 // Reset
 // ----------------------------------------------------------------------------
-void pokey_Reset( ) {
-  for(int index = 0; index < POKEY_POLY17_SIZE; index++) {
-    pokey_poly17[index] = rand( ) & 1;
+// Polynomial counters are generated with the same LFSRs as MAME's POKEY.
+static void pokey_GeneratePoly45(byte* poly, int size) {
+  uint mask = (1u << size) - 1;
+  uint lfsr = 0;
+  for(uint index = 0; index < mask; index++) {
+    lfsr = ((lfsr << 1) | (~((lfsr >> 2) ^ (lfsr >> (size - 1))) & 1u)) & mask;
+    poly[index] = (byte)(lfsr & 1);
   }
+}
+
+static void pokey_GeneratePoly9(byte* poly) {
+  uint lfsr = POKEY_POLY9_SIZE;
+  for(uint index = 0; index < POKEY_POLY9_SIZE; index++) {
+    uint bit = ((lfsr >> 0) ^ (lfsr >> 5)) & 1u;
+    poly[index] = (byte)(lfsr & 1);
+    lfsr = (lfsr >> 1) | (bit << 8);
+  }
+}
+
+static void pokey_GeneratePoly17(byte* poly) {
+  uint lfsr = POKEY_POLY17_SIZE;
+  for(uint index = 0; index < POKEY_POLY17_SIZE; index++) {
+    uint in8 = ((lfsr >> 8) ^ (lfsr >> 13)) & 1u;
+    uint in = lfsr & 1u;
+    lfsr = lfsr >> 1;
+    lfsr = (lfsr & 0xff7fu) | (in8 << 7);
+    lfsr = (in << 16) | lfsr;
+    poly[index] = (byte)(lfsr & 1);
+  }
+}
+
+void pokey_Reset( ) {
+  pokey_GeneratePoly45(pokey_poly04, 4);
+  pokey_GeneratePoly45(pokey_poly05, 5);
+  pokey_GeneratePoly9(pokey_poly09);
+  pokey_GeneratePoly17(pokey_poly17);
+  pokey_filterSample[0] = 0;
+  pokey_filterSample[1] = 0;
   pokey_polyAdjust = 0;
   pokey_poly04Cntr = 0;
   pokey_poly05Cntr = 0;
@@ -316,23 +352,49 @@ void pokey_Process(uint length) {
       pokey_polyAdjust = 0;
       pokey_divideCount[nextEvent] += pokey_divideMax[nextEvent];
 
-      if((pokey_audc[nextEvent] & POKEY_NOTPOLY5) || pokey_poly05[pokey_poly05Cntr]) {
-        if(pokey_audc[nextEvent] & POKEY_PURE) {
-          pokey_output[nextEvent] = !pokey_output[nextEvent];
+      // In 16-bit mode the low channel only acts as the prescaler of the high one.
+      bool prescaler = (nextEvent == POKEY_CHANNEL1 && (pokey_audctl & POKEY_CH1_CH2)) ||
+                       (nextEvent == POKEY_CHANNEL3 && (pokey_audctl & POKEY_CH3_CH4));
+      if(!prescaler) {
+        // The high-pass filter latches the filtered channel whenever its clock channel fires.
+        if(nextEvent == POKEY_CHANNEL3 && (pokey_audctl & POKEY_CH1_FILTER)) {
+          pokey_filterSample[0] = pokey_output[POKEY_CHANNEL1];
+          pokey_outVol[POKEY_CHANNEL1] = 0;
         }
-        else if (pokey_audc[nextEvent] & POKEY_POLY4) {
-          pokey_output[nextEvent] = pokey_poly04[pokey_poly04Cntr];
+        if(nextEvent == POKEY_CHANNEL4 && (pokey_audctl & POKEY_CH2_FILTER)) {
+          pokey_filterSample[1] = pokey_output[POKEY_CHANNEL2];
+          pokey_outVol[POKEY_CHANNEL2] = 0;
+        }
+
+        if((pokey_audc[nextEvent] & POKEY_NOTPOLY5) || pokey_poly05[pokey_poly05Cntr]) {
+          if(pokey_audc[nextEvent] & POKEY_PURE) {
+            pokey_output[nextEvent] = !pokey_output[nextEvent];
+          }
+          else if (pokey_audc[nextEvent] & POKEY_POLY4) {
+            pokey_output[nextEvent] = pokey_poly04[pokey_poly04Cntr];
+          }
+          else if (pokey_poly17Size == POKEY_POLY9_SIZE) {
+            pokey_output[nextEvent] = pokey_poly09[pokey_poly17Cntr];
+          }
+          else {
+            pokey_output[nextEvent] = pokey_poly17[pokey_poly17Cntr];
+          }
+        }
+
+        byte filteredOutput = pokey_output[nextEvent];
+        if(nextEvent == POKEY_CHANNEL1 && (pokey_audctl & POKEY_CH1_FILTER)) {
+          filteredOutput ^= pokey_filterSample[0];
+        }
+        else if(nextEvent == POKEY_CHANNEL2 && (pokey_audctl & POKEY_CH2_FILTER)) {
+          filteredOutput ^= pokey_filterSample[1];
+        }
+
+        if(filteredOutput) {
+          pokey_outVol[nextEvent] = pokey_audc[nextEvent] & POKEY_VOLUME_MASK;
         }
         else {
-          pokey_output[nextEvent] = pokey_poly17[pokey_poly17Cntr];
+          pokey_outVol[nextEvent] = 0;
         }
-      }
-
-      if(pokey_output[nextEvent]) {
-        pokey_outVol[nextEvent] = pokey_audc[nextEvent] & POKEY_VOLUME_MASK;
-      }
-      else {
-        pokey_outVol[nextEvent] = 0;
       }
     }
     else {
