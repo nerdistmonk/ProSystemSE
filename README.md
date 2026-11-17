@@ -21,7 +21,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ```
-# Version 3.0 - October 27th, 2026
+# Version 3.5 - November 17th, 2026
 
 ![image](shot.png)
 
