@@ -203,6 +203,10 @@ static void cartridge_ReadHeader(const byte* header) {
         else if (cartridge_size > 131072) {
             cartridge_type = CARTRIDGE_TYPE_SUPERCART_LARGE;
         }
+        else if ((typeByte & 0x10) && cartridge_size == 131072) {
+            // Bit 4 maps bank 6 at $4000, which is the SuperGame ROM layout
+            cartridge_type = CARTRIDGE_TYPE_SUPERCART_ROM;
+        }
         else if (typeByte == 2 || typeByte == 3) {
             cartridge_type = CARTRIDGE_TYPE_SUPERCART;
         }
