@@ -58,9 +58,9 @@ static const Vector SALLY_NMI = {65531, 65530};
 static const Vector SALLY_IRQ = {65535, 65534}; 
 
 static const byte SALLY_CYCLES[256] = {
-	7,6,0,0,0,3,5,0,3,2,2,0,0,4,6,0,
+	7,6,0,0,0,3,5,0,3,2,2,2,0,4,6,0,
 	2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0,
-	6,6,0,0,3,3,5,0,4,2,2,0,4,4,6,0,
+	6,6,0,0,3,3,5,0,4,2,2,2,4,4,6,0,
 	2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0,
 	6,6,0,0,0,3,5,0,3,2,2,0,3,4,6,0,
 	2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0,
@@ -310,6 +310,15 @@ static void sally_ADC( ) {
 static void sally_AND( ) {
   sally_a &= memory_Read(sally_address.w);
   sally_Flags(sally_a);
+}
+
+// ----------------------------------------------------------------------------
+// ANC (undocumented): AND immediate, then copy N into C
+// ----------------------------------------------------------------------------
+static void sally_ANC( ) {
+  sally_a &= memory_Read(sally_address.w);
+  sally_Flags(sally_a);
+  sally_p = (sally_p & ~SALLY_FLAG.C) | ((sally_a & 0x80) ? SALLY_FLAG.C : 0);
 }
 
 // ----------------------------------------------------------------------------
@@ -970,6 +979,12 @@ uint sally_ExecuteInstruction( ) {
     case 0x0a: 
       sally_ASLA( ); 
       break;        
+
+    case 0x0b: 
+    case 0x2b: 
+      sally_Immediate( ); 
+      sally_ANC( ); 
+      break;
 
     case 0x0d: 
       sally_Absolute( );  
