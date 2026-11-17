@@ -65,42 +65,17 @@ void riot_SetInput(const byte* input) {
   (input[0x01])? riot_swcha_input = riot_swcha_input &~ 0x40: riot_swcha_input = riot_swcha_input | 0x40;
   (input[0x02])? riot_swcha_input = riot_swcha_input &~ 0x20: riot_swcha_input = riot_swcha_input | 0x20;
   (input[0x03])? riot_swcha_input = riot_swcha_input &~ 0x10: riot_swcha_input = riot_swcha_input | 0x10;
-  if(input[0x04]) {
-    memory_ram[INPT0] = memory_ram[INPT0] |  0x80; 
-    memory_ram[INPT4] = memory_ram[INPT4] &~ 0x80;
-  }
-  else {
-    memory_ram[INPT0] = memory_ram[INPT0] &~ 0x80;
-    memory_ram[INPT4] = memory_ram[INPT4] |  0x80;
-  }
-  if(input[0x05]) {
-    memory_ram[INPT1] = memory_ram[INPT1] |  0x80;
-    memory_ram[INPT4] = memory_ram[INPT4] &~ 0x80;
-  }
-  else {
-    memory_ram[INPT1] = memory_ram[INPT1] &~ 0x80;
-    memory_ram[INPT4] = memory_ram[INPT4] |  0x80;
-  }
+  // INPT4 is the single-button trigger line: either button pulls it low.
+  (input[0x04])? memory_ram[INPT0] = memory_ram[INPT0] |  0x80: memory_ram[INPT0] = memory_ram[INPT0] &~ 0x80;
+  (input[0x05])? memory_ram[INPT1] = memory_ram[INPT1] |  0x80: memory_ram[INPT1] = memory_ram[INPT1] &~ 0x80;
+  (input[0x04] || input[0x05])? memory_ram[INPT4] = memory_ram[INPT4] &~ 0x80: memory_ram[INPT4] = memory_ram[INPT4] | 0x80;
   (input[0x06])? riot_swcha_input = riot_swcha_input &~ 0x08: riot_swcha_input = riot_swcha_input | 0x08;
   (input[0x07])? riot_swcha_input = riot_swcha_input &~ 0x04: riot_swcha_input = riot_swcha_input | 0x04;
   (input[0x08])? riot_swcha_input = riot_swcha_input &~ 0x02: riot_swcha_input = riot_swcha_input | 0x02;
   (input[0x09])? riot_swcha_input = riot_swcha_input &~ 0x01: riot_swcha_input = riot_swcha_input | 0x01;
-  if(input[0x0a]) {
-    memory_ram[INPT2] = memory_ram[INPT2] |  0x80;  
-    memory_ram[INPT5] = memory_ram[INPT5] &~ 0x80;
-  }
-  else {
-    memory_ram[INPT2] = memory_ram[INPT2] &~ 0x80; 
-    memory_ram[INPT5] = memory_ram[INPT5] |  0x80;
-  }
-  if(input[0x0b]) {
-    memory_ram[INPT3] = memory_ram[INPT3] |  0x80;
-    memory_ram[INPT5] = memory_ram[INPT5] &~ 0x80;
-  }
-  else {
-    memory_ram[INPT3] = memory_ram[INPT3] &~ 0x80;  
-    memory_ram[INPT5] = memory_ram[INPT5] |  0x80;
-  }
+  (input[0x0a])? memory_ram[INPT2] = memory_ram[INPT2] |  0x80: memory_ram[INPT2] = memory_ram[INPT2] &~ 0x80;
+  (input[0x0b])? memory_ram[INPT3] = memory_ram[INPT3] |  0x80: memory_ram[INPT3] = memory_ram[INPT3] &~ 0x80;
+  (input[0x0a] || input[0x0b])? memory_ram[INPT5] = memory_ram[INPT5] &~ 0x80: memory_ram[INPT5] = memory_ram[INPT5] | 0x80;
   (input[0x0c])? memory_ram[SWCHB] = memory_ram[SWCHB] &~ 0x01: memory_ram[SWCHB] = memory_ram[SWCHB] | 0x01;
   (input[0x0d])? memory_ram[SWCHB] = memory_ram[SWCHB] &~ 0x02: memory_ram[SWCHB] = memory_ram[SWCHB] | 0x02;
   (input[0x0e])? memory_ram[SWCHB] = memory_ram[SWCHB] &~ 0x08: memory_ram[SWCHB] = memory_ram[SWCHB] | 0x08;
