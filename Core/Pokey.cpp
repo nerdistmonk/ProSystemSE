@@ -38,6 +38,7 @@
 // ----------------------------------------------------------------------------
 // Pokey.cpp
 // ----------------------------------------------------------------------------
+#include <cstdint>
 #include <cstdlib>
 #include "Pokey.h"
 #define POKEY_NOTPOLY5 0x80
@@ -89,7 +90,7 @@ static uint pokey_poly17Cntr;
 static uint pokey_divideMax[4];
 static uint pokey_divideCount[4];
 static uint pokey_sampleMax;
-static uint pokey_sampleCount[2];
+static uint64_t pokey_sampleCount;
 static uint pokey_baseMultiplier;
 
 // ----------------------------------------------------------------------------
@@ -140,8 +141,7 @@ void pokey_Reset( ) {
 
   pokey_sampleMax = ((uint)pokey_frequency << 8) / pokey_sampleRate;
 
-  pokey_sampleCount[0] = 0;
-  pokey_sampleCount[1] = 0;
+  pokey_sampleCount = 0;
 
   pokey_poly17Size = POKEY_POLY17_SIZE;
 
@@ -322,13 +322,12 @@ void pokey_SetRegister(word address, byte value) {
 // ----------------------------------------------------------------------------
 void pokey_Process(uint length) {
   byte* buffer = pokey_buffer + pokey_soundCntr;
-  uint* sampleCntrPtr = (uint*)((byte*)(&pokey_sampleCount[0]) + 1);
   uint size = length;
 
   while(length) {
     byte currentValue;
     byte nextEvent = POKEY_SAMPLE;
-    uint eventMin = *sampleCntrPtr;
+    uint eventMin = (uint)(pokey_sampleCount >> 8);
 
     byte channel;
     for(channel = POKEY_CHANNEL1; channel <= POKEY_CHANNEL4; channel++) {
@@ -342,7 +341,7 @@ void pokey_Process(uint length) {
       pokey_divideCount[channel] -= eventMin;
     }
 
-    *sampleCntrPtr -= eventMin;
+    pokey_sampleCount -= (uint64_t)eventMin << 8;
     pokey_polyAdjust += eventMin;
 
     if(nextEvent != POKEY_SAMPLE) {
@@ -398,7 +397,7 @@ void pokey_Process(uint length) {
       }
     }
     else {
-      *pokey_sampleCount += pokey_sampleMax;
+      pokey_sampleCount += pokey_sampleMax;
       currentValue = 0;
 
       for(channel = POKEY_CHANNEL1; channel <= POKEY_CHANNEL4; channel++) {
