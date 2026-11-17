@@ -3,6 +3,8 @@
 // ----------------------------------------------------------------------------
 #include "ProSystem.h"
 #define PRO_SYSTEM_STATE_HEADER "PRO-SYSTEM STATE"
+// Header + CPU + 16K RAM + Souper registers + 32K Souper EXRAM
+#define PRO_SYSTEM_STATE_MAX_SIZE 49218
 
 bool prosystem_active = false;
 bool prosystem_paused = false;
@@ -105,7 +107,7 @@ void prosystem_ExecuteFrame(const byte* input) {
       }
     }
     tia_Process(2);
-    if(cartridge_pokey || cartridge_pokey450) {
+    if(cartridge_pokey || cartridge_pokey_base) {
       pokey_Process(2);
     }
   }
@@ -132,7 +134,7 @@ bool prosystem_Save(std::string filename, bool compress) {
         return false;  
     }  
 
-    byte buffer[32829] = {0};  
+    byte buffer[PRO_SYSTEM_STATE_MAX_SIZE] = {0};  
     uint size = 0;  
 
     uint index;  
@@ -172,6 +174,17 @@ bool prosystem_Save(std::string filename, bool compress) {
         }   
         size += 16384;  
     }  
+    else if (cartridge_type == CARTRIDGE_TYPE_SOUPER) {  
+        buffer[size++] = cartridge_souper_chr_bank[0];  
+        buffer[size++] = cartridge_souper_chr_bank[1];  
+        buffer[size++] = cartridge_souper_mode;  
+        buffer[size++] = cartridge_souper_ram_page_bank[0];  
+        buffer[size++] = cartridge_souper_ram_page_bank[1];  
+        for (index = 0; index < MEMORY_SOUPER_EXRAM_SIZE; index++) {  
+            buffer[size + index] = memory_souper_ram[index];  
+        }  
+        size += MEMORY_SOUPER_EXRAM_SIZE;  
+    }  
 
     if (!compress) {  
         FILE* file = fopen(filename.c_str(), "wb");  
@@ -203,7 +216,7 @@ bool prosystem_Load(const std::string filename) {
         return false;  
     }  
 
-    byte buffer[32829] = {0};  
+    byte buffer[PRO_SYSTEM_STATE_MAX_SIZE] = {0};  
     uint size = archive_GetUncompressedFileSize(filename);  
     if (size == 0) {  
         FILE* file = fopen(filename.c_str(), "rb");  
@@ -222,7 +235,7 @@ bool prosystem_Load(const std::string filename) {
             return false;  
         }  
 
-        if (size != 16445 && size != 32829) {  
+        if (size != 16445 && size != 32829 && size != PRO_SYSTEM_STATE_MAX_SIZE) {  
             fclose(file);  
             return false;  
         }  
@@ -233,7 +246,7 @@ bool prosystem_Load(const std::string filename) {
         }  
         fclose(file);  
     }   
-    else if (size == 16445 || size == 32829) {  
+    else if (size == 16445 || size == 32829 || size == PRO_SYSTEM_STATE_MAX_SIZE) {  
         archive_Uncompress(filename, buffer, size);  
     }  
     else {  
@@ -290,6 +303,20 @@ bool prosystem_Load(const std::string filename) {
         }  
         offset += 16384;   
     }   
+    else if (cartridge_type == CARTRIDGE_TYPE_SOUPER) {  
+        if (size != PRO_SYSTEM_STATE_MAX_SIZE) {  
+            return false;  
+        }  
+        cartridge_souper_chr_bank[0] = buffer[offset++];  
+        cartridge_souper_chr_bank[1] = buffer[offset++];  
+        cartridge_souper_mode = buffer[offset++];  
+        cartridge_souper_ram_page_bank[0] = buffer[offset++];  
+        cartridge_souper_ram_page_bank[1] = buffer[offset++];  
+        for (index = 0; index < MEMORY_SOUPER_EXRAM_SIZE; index++) {  
+            memory_souper_ram[index] = buffer[offset + index];  
+        }  
+        offset += MEMORY_SOUPER_EXRAM_SIZE;  
+    }  
 
     return true;  
 }

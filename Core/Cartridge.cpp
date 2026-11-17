@@ -47,7 +47,14 @@ int cartridge_crossx = 0;
 int cartridge_crossy = 0;
 bool cartridge_hsc = false;
 bool cartridge_xm = false;
+byte cartridge_souper_chr_bank[2] = {0, 0};
+byte cartridge_souper_mode = 0;
+byte cartridge_souper_ram_page_bank[2] = {0, 0};
 bool cartridge_pokey450 = false;
+bool cartridge_pokey440 = false;
+bool cartridge_pokey800 = false;
+// Where the POKEY sits when it is mapped into RAM space (0 = none); $4000 is handled by cartridge_pokey.
+word cartridge_pokey_base = 0;
 byte cartridge_hblank = 0;
 bool cartridge_dualanalog = false;
 bool cartridge_leftswitch = false;
@@ -60,6 +67,9 @@ void cartridge_ResetExtras() {
     cartridge_hsc = false;
     cartridge_xm = false;
     cartridge_pokey450 = false;
+    cartridge_pokey440 = false;
+    cartridge_pokey800 = false;
+    cartridge_pokey_base = 0;
     cartridge_hblank = 0;
     cartridge_dualanalog = false;
     cartridge_leftswitch = false;
@@ -121,6 +131,45 @@ static void cartridge_WriteBank(word address, byte bank) {
 }
 
 // ----------------------------------------------------------------------------
+// LoadROM (raw cartridge data, used by Souper CHR banking)
+// ----------------------------------------------------------------------------
+byte cartridge_LoadROM(uint address) {
+    if (address >= cartridge_size) {
+        return 0;
+    }
+    return cartridge_buffer[address];
+}
+
+// ----------------------------------------------------------------------------
+// Souper
+// ----------------------------------------------------------------------------
+void cartridge_souper_Reset() {
+    cartridge_souper_chr_bank[0] = 0;
+    cartridge_souper_chr_bank[1] = 0;
+    cartridge_souper_mode = 0;
+    cartridge_souper_ram_page_bank[0] = 0;
+    cartridge_souper_ram_page_bank[1] = 0;
+}
+
+// ----------------------------------------------------------------------------
+// UpdatePokeyBase
+// ----------------------------------------------------------------------------
+void cartridge_UpdatePokeyBase() {
+    if (cartridge_pokey800) {
+        cartridge_pokey_base = 0x800;
+    }
+    else if (cartridge_pokey440) {
+        cartridge_pokey_base = 0x440;
+    }
+    else if (cartridge_pokey450) {
+        cartridge_pokey_base = 0x450;
+    }
+    else {
+        cartridge_pokey_base = 0;
+    }
+}
+
+// ----------------------------------------------------------------------------
 // ReadHeader
 // ----------------------------------------------------------------------------
 static void cartridge_ReadHeader(const byte* header) {
@@ -135,12 +184,15 @@ static void cartridge_ReadHeader(const byte* header) {
     cartridge_size |= static_cast<uint>(header[51]) << 8;
     cartridge_size |= static_cast<uint>(header[52]);
 
-    // Bit 6 of byte 54 is a POKEY at $0450; it doesn't affect the bankswitching scheme.
+    // Bit 6 of byte 54 is a POKEY at $0450, bit 2 of byte 53 one at $0440 and bit 7 one
+    // at $0800; none of them affect the bankswitching scheme.
     cartridge_pokey450 = (header[54] & 0x40) ? true : false;
+    cartridge_pokey440 = (header[53] & 0x04) ? true : false;
+    cartridge_pokey800 = (header[53] & 0x80) ? true : false;
     byte typeByte = header[54] & ~0x40;
     // Only Absolute (1) and Activision (2) are supported in byte 53; other bits
     // (YM2151, Souper, banksets...) are ignored so the cart still boots.
-    byte mapperByte = (header[53] == 1 || header[53] == 2) ? header[53] : 0;
+    byte mapperByte = (header[53] == 1 || header[53] == 2 || header[53] == 0x10) ? header[53] : 0;
     // SuperGame carts have a power-of-two bank count, except the 9-bank (144K) layout
     // and its larger variants which have one extra 16K bank.
     bool oddBanks = ((cartridge_size / 16384) & 1) != 0;
@@ -171,12 +223,16 @@ static void cartridge_ReadHeader(const byte* header) {
         else if (mapperByte == 2) {
             cartridge_type = CARTRIDGE_TYPE_ACTIVISION;
         }
+        else if (mapperByte == 0x10) {
+            cartridge_type = CARTRIDGE_TYPE_SOUPER;
+        }
         else {
             cartridge_type = CARTRIDGE_TYPE_NORMAL;
         }
     }
 
     cartridge_pokey = (header[54] & 1) ? true : false;
+    cartridge_UpdatePokeyBase();
     cartridge_controller[0] = header[55];
     cartridge_controller[1] = header[56];
     cartridge_region = header[57];
@@ -246,6 +302,15 @@ void cartridge_Store() {
             memory_WriteROM(57344, 8192, cartridge_buffer + 114688);
         }
         break;
+
+    case CARTRIDGE_TYPE_SOUPER:
+        if (cartridge_size >= 32 * 16384) {
+            memory_WriteROM(49152, 16384, cartridge_buffer + cartridge_GetBankOffset(31));
+            memory_WriteROM(32768, 16384, cartridge_buffer + cartridge_GetBankOffset(0));
+            memory_ClearROM(16384, 16384);
+            cartridge_bank = 0;
+        }
+        break;
     }
 }
 
@@ -282,10 +347,32 @@ void cartridge_Write(word address, byte data) {
             cartridge_StoreBank(address & 7);
         }
         break;
+    case CARTRIDGE_TYPE_SOUPER:
+        switch (address) {
+        case CARTRIDGE_SOUPER_BANK_SEL:
+            cartridge_StoreBank(data & 31);
+            break;
+        case CARTRIDGE_SOUPER_CHR_A_SEL:
+            cartridge_souper_chr_bank[0] = data;
+            break;
+        case CARTRIDGE_SOUPER_CHR_B_SEL:
+            cartridge_souper_chr_bank[1] = data;
+            break;
+        case CARTRIDGE_SOUPER_MODE_SEL:
+            cartridge_souper_mode = data;
+            break;
+        case CARTRIDGE_SOUPER_EXRAM_V_SEL:
+            cartridge_souper_ram_page_bank[0] = data & 7;
+            break;
+        case CARTRIDGE_SOUPER_EXRAM_D_SEL:
+            cartridge_souper_ram_page_bank[1] = data & 7;
+            break;
+        }
+        break;
     }
 
-    if (cartridge_pokey450 && address >= 0x450 && address < 0x459) {
-        pokey_SetRegister(address - 0x450 + 0x4000, data);
+    if (cartridge_pokey_base && address >= cartridge_pokey_base && address < cartridge_pokey_base + 9) {
+        pokey_SetRegister(address - cartridge_pokey_base + 0x4000, data);
     }
 
     if (cartridge_pokey && address >= 0x4000 && address < 0x4009) {
@@ -312,6 +399,7 @@ void cartridge_StoreBank(byte bank) {
     case CARTRIDGE_TYPE_SUPERCART_RAM:
     case CARTRIDGE_TYPE_SUPERCART_ROM:
     case CARTRIDGE_TYPE_SUPERCART_LARGE:
+    case CARTRIDGE_TYPE_SOUPER:
         cartridge_WriteBank(32768, bank);
         break;
     case CARTRIDGE_TYPE_ABSOLUTE:

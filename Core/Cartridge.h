@@ -8,6 +8,16 @@
 #define CARTRIDGE_TYPE_SUPERCART_ROM 4
 #define CARTRIDGE_TYPE_ABSOLUTE 5
 #define CARTRIDGE_TYPE_ACTIVISION 6
+#define CARTRIDGE_TYPE_SOUPER 7
+#define CARTRIDGE_SOUPER_BANK_SEL 0x8000
+#define CARTRIDGE_SOUPER_CHR_A_SEL 0x8001
+#define CARTRIDGE_SOUPER_CHR_B_SEL 0x8002
+#define CARTRIDGE_SOUPER_MODE_SEL 0x8003
+#define CARTRIDGE_SOUPER_EXRAM_V_SEL 0x8004
+#define CARTRIDGE_SOUPER_EXRAM_D_SEL 0x8005
+#define CARTRIDGE_SOUPER_MODE_MFT 0x1
+#define CARTRIDGE_SOUPER_MODE_CHR 0x2
+#define CARTRIDGE_SOUPER_MODE_EXS 0x4
 #define CARTRIDGE_CONTROLLER_NONE 0
 #define CARTRIDGE_CONTROLLER_JOYSTICK 1
 #define CARTRIDGE_CONTROLLER_LIGHTGUN 2
@@ -54,7 +64,16 @@ extern int cartridge_crossx;
 extern int cartridge_crossy;
 extern bool cartridge_hsc;
 extern bool cartridge_xm;
+extern byte cartridge_souper_chr_bank[2];
+extern byte cartridge_souper_mode;
+extern byte cartridge_souper_ram_page_bank[2];
+extern void cartridge_souper_Reset();
+extern byte cartridge_LoadROM(uint address);
 extern bool cartridge_pokey450;
+extern bool cartridge_pokey440;
+extern bool cartridge_pokey800;
+extern word cartridge_pokey_base;
+extern void cartridge_UpdatePokeyBase();
 extern byte cartridge_hblank;
 extern bool cartridge_dualanalog;
 extern bool cartridge_leftswitch;

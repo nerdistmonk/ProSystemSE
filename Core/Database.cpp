@@ -63,6 +63,8 @@ bool database_Load(std::string digest) {
                         else if (key == "hsc") cartridge_hsc = common_ParseBool(val);  
                         else if (key == "xm") cartridge_xm = common_ParseBool(val);  
                         else if (key == "pokey450") cartridge_pokey450 = common_ParseBool(val);  
+                        else if (key == "pokey440") cartridge_pokey440 = common_ParseBool(val);  
+                        else if (key == "pokey800") cartridge_pokey800 = common_ParseBool(val);  
                         else if (key == "hblank") cartridge_hblank = common_ParseByte(val);  
                         else if (key == "dualanalog") cartridge_dualanalog = common_ParseBool(val);  
                         else if (key == "leftswitch") cartridge_leftswitch = common_ParseBool(val);  
@@ -71,6 +73,7 @@ bool database_Load(std::string digest) {
                     }   
                 }   
                 fclose(file);   
+                cartridge_UpdatePokeyBase();  
                 return true;   
             }   
         }   

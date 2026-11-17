@@ -25,6 +25,7 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 #define MEMORY_SIZE 65536
+#define MEMORY_SOUPER_EXRAM_SIZE 32768
 #ifndef NULL
 #define NULL 0
 #endif
@@ -46,5 +47,7 @@ extern void memory_WriteROM(word address, word size, const byte* data);
 extern void memory_ClearROM(word address, word size);
 extern byte memory_ram[MEMORY_SIZE];
 extern byte memory_rom[MEMORY_SIZE];
+extern byte memory_souper_ram[MEMORY_SOUPER_EXRAM_SIZE];
+extern word memory_souper_GetRamAddress(word address);
 
 #endif
