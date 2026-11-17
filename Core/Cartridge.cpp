@@ -135,9 +135,20 @@ static void cartridge_ReadHeader(const byte* header) {
     cartridge_size |= static_cast<uint>(header[51]) << 8;
     cartridge_size |= static_cast<uint>(header[52]);
 
-    byte typeByte = header[54];
-    if (header[53] == 0) {
-        if (cartridge_size > 131072) {
+    // Bit 6 of byte 54 is a POKEY at $0450; it doesn't affect the bankswitching scheme.
+    cartridge_pokey450 = (header[54] & 0x40) ? true : false;
+    byte typeByte = header[54] & ~0x40;
+    // Only Absolute (1) and Activision (2) are supported in byte 53; other bits
+    // (YM2151, Souper, banksets...) are ignored so the cart still boots.
+    byte mapperByte = (header[53] == 1 || header[53] == 2) ? header[53] : 0;
+    // SuperGame carts have a power-of-two bank count, except the 9-bank (144K) layout
+    // and its larger variants which have one extra 16K bank.
+    bool oddBanks = ((cartridge_size / 16384) & 1) != 0;
+    if (mapperByte == 0) {
+        if (typeByte >= 2 && typeByte <= 7 && !oddBanks) {
+            cartridge_type = (typeByte >= 4) ? CARTRIDGE_TYPE_SUPERCART_RAM : CARTRIDGE_TYPE_SUPERCART;
+        }
+        else if (cartridge_size > 131072) {
             cartridge_type = CARTRIDGE_TYPE_SUPERCART_LARGE;
         }
         else if (typeByte == 2 || typeByte == 3) {
@@ -154,10 +165,10 @@ static void cartridge_ReadHeader(const byte* header) {
         }
     }
     else {
-        if (header[53] == 1) {
+        if (mapperByte == 1) {
             cartridge_type = CARTRIDGE_TYPE_ABSOLUTE;
         }
-        else if (header[53] == 2) {
+        else if (mapperByte == 2) {
             cartridge_type = CARTRIDGE_TYPE_ACTIVISION;
         }
         else {
@@ -195,8 +206,8 @@ void cartridge_Store() {
         break;
 
     case CARTRIDGE_TYPE_SUPERCART_LARGE:
-        if (cartridge_GetBankOffset(8) < cartridge_size) {
-            memory_WriteROM(49152, 16384, cartridge_buffer + cartridge_GetBankOffset(8));
+        if (cartridge_GetBankOffset(lastBank) < cartridge_size) {
+            memory_WriteROM(49152, 16384, cartridge_buffer + cartridge_GetBankOffset(lastBank));
             memory_WriteROM(32768, 16384, cartridge_buffer + cartridge_GetBankOffset(0));
             memory_WriteROM(16384, 16384, cartridge_buffer + cartridge_GetBankOffset(0));
             cartridge_bank = 0;
@@ -242,16 +253,22 @@ void cartridge_Store() {
 // Write
 // ----------------------------------------------------------------------------
 void cartridge_Write(word address, byte data) {
+    // Larger SuperGame carts (256K, 512K...) have more than the classic 9 selectable banks.
+    uint bankLimit = cartridge_size / 16384;
+    if (bankLimit < 9) {
+        bankLimit = 9;
+    }
+
     switch (cartridge_type) {
     case CARTRIDGE_TYPE_SUPERCART:
     case CARTRIDGE_TYPE_SUPERCART_RAM:
     case CARTRIDGE_TYPE_SUPERCART_ROM:
-        if (address >= 32768 && address < 49152 && data < 9) {
+        if (address >= 32768 && address < 49152 && data < bankLimit) {
             cartridge_StoreBank(data);
         }
         break;
     case CARTRIDGE_TYPE_SUPERCART_LARGE:
-        if (address >= 32768 && address < 49152 && data < 9) {
+        if (address >= 32768 && address < 49152 && data < bankLimit) {
             cartridge_StoreBank(data + 1);
         }
         break;
@@ -265,6 +282,10 @@ void cartridge_Write(word address, byte data) {
             cartridge_StoreBank(address & 7);
         }
         break;
+    }
+
+    if (cartridge_pokey450 && address >= 0x450 && address < 0x459) {
+        pokey_SetRegister(address - 0x450 + 0x4000, data);
     }
 
     if (cartridge_pokey && address >= 0x4000 && address < 0x4009) {

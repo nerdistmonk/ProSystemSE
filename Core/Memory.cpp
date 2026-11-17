@@ -71,7 +71,8 @@ byte memory_Read(word address) {
 // ----------------------------------------------------------------------------
 void memory_Write(word address, byte data) {
     if (!memory_rom[address]) {
-        if (cartridge_pokey && address >= 0x4000 && address < 0x4009) {
+        if ((cartridge_pokey && address >= 0x4000 && address < 0x4009) ||
+            (cartridge_pokey450 && address >= 0x450 && address < 0x459)) {
             cartridge_Write(address, data);
         }
         switch (address) {

@@ -10,6 +10,9 @@ word prosystem_frequency = 60;
 byte prosystem_frame = 0;
 word prosystem_scanlines = 262;
 uint prosystem_cycles = 0;
+static uint bios_frames = 0;
+// Normal BIOS handoff completes by frame ~240.
+#define BIOS_HANDOFF_LIMIT 900
 
 // ----------------------------------------------------------------------------
 // Reset
@@ -27,6 +30,8 @@ void prosystem_Reset( ) {
     maria_Clear( );
     maria_Reset( );
 	riot_Reset ( );
+    bios_frames = 0;
+    bios_waiting = bios_enabled && !bios_bypass && bios_IsLoaded( );
     if(bios_enabled && !bios_bypass) {
       bios_Store( );
     }
@@ -61,6 +66,9 @@ void prosystem_ExecuteFrame(const byte* input) {
       if(riot_timing) {
         riot_UpdateTimer(cycles);
       }
+      if(bios_waiting) {
+        bios_CheckHandoff(sally_pc.w);
+      }
       if(bios_Restarted(sally_pc.w)) {
         bios_bypass = true;
         bios_restart = true;
@@ -83,6 +91,9 @@ void prosystem_ExecuteFrame(const byte* input) {
       if(riot_timing) {
         riot_UpdateTimer(cycles);
       }
+      if(bios_waiting) {
+        bios_CheckHandoff(sally_pc.w);
+      }
       if(bios_Restarted(sally_pc.w)) {
         bios_bypass = true;
         bios_restart = true;
@@ -94,12 +105,16 @@ void prosystem_ExecuteFrame(const byte* input) {
       }
     }
     tia_Process(2);
-    if(cartridge_pokey) {
+    if(cartridge_pokey || cartridge_pokey450) {
       pokey_Process(2);
     }
   }
+  if(bios_waiting && ++bios_frames > BIOS_HANDOFF_LIMIT) {
+    bios_bypass = true;
+    bios_restart = true;
+  }
   if(bios_restart) {
-    fprintf(stderr, "BIOS rejected this cartridge (unsigned ROM); restarting without BIOS\n");
+    fprintf(stderr, "BIOS did not accept this cartridge (unsigned ROM); restarting without BIOS\n");
     prosystem_Reset( );
     return;
   }
@@ -238,6 +253,9 @@ bool prosystem_Load(const std::string filename) {
     offset += 4;  
 
     prosystem_Reset();  
+    // A saved state is taken after the BIOS has handed off, so map the cartridge.
+    bios_waiting = false;  
+    cartridge_Store();  
 
     char digest[33] = {0};  
     for (index = 0; index < 32; index++) {  

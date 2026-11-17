@@ -76,7 +76,7 @@ void Audio_ProcessFrame() {
     uint8_t frameAudio[AUDIO_SAMPLES_PER_FRAME];
     for (int i = 0; i < AUDIO_SAMPLES_PER_FRAME; ++i) {
         int16_t mixed = static_cast<int16_t>(tia_buffer[i]);
-        if (cartridge_pokey) {
+        if (cartridge_pokey || cartridge_pokey450) {
             mixed = (mixed + static_cast<int16_t>(pokey_buffer[i])) / 2;
         }
         mixed = static_cast<int16_t>(g_volume * mixed);

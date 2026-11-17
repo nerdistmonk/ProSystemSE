@@ -16,6 +16,8 @@ extern void bios_Release();
 extern std::string bios_filename;
 extern bool bios_enabled;
 extern bool bios_bypass;
+extern bool bios_waiting;
 extern bool bios_Restarted(word pc);
+extern void bios_CheckHandoff(word pc);
 
 #endif

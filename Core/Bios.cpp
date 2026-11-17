@@ -3,6 +3,7 @@
 bool bios_enabled = false;
 // Set when the BIOS rejects the cartridge (unsigned ROM) and we boot without it.
 bool bios_bypass = false;
+bool bios_waiting = false;
 std::string bios_filename;
 
 static byte* bios_data = NULL;
@@ -79,6 +80,19 @@ bool bios_Restarted(word pc) {
         }
     }
     return true;
+}
+
+// The BIOS is done once it jumps to the cartridge's reset vector with the cartridge mapped.
+// A cartridge the BIOS rejects can also hang it (e.g. by crashing in its NMI handler).
+void bios_CheckHandoff(word pc) {
+    if (!bios_waiting || bios_data == NULL || bios_size < 4) {
+        return;
+    }
+    word entry = bios_data[bios_size - 4] | (bios_data[bios_size - 3] << 8);
+    word vector = memory_ram[0xfffc] | (memory_ram[0xfffd] << 8);
+    if (vector != entry && pc == vector) {
+        bios_waiting = false;
+    }
 }
 
 void bios_Store() {
