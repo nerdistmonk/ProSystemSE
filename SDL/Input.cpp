@@ -220,6 +220,9 @@ void Input_EnumerateConnectedGamepads() {
 
 void Input_HandleDeviceEvent(const SDL_Event& event) {
     if (event.type == SDL_EVENT_GAMEPAD_ADDED) {
+        // SDL also reports pads that were already open from the startup enumeration;
+        // opening one again would make a single pad drive both players.
+        if (SDL_GetGamepadFromID(event.gdevice.which)) return;
         if (!g_gamepad1) g_gamepad1 = SDL_OpenGamepad(event.gdevice.which);
         else if (!g_gamepad2) g_gamepad2 = SDL_OpenGamepad(event.gdevice.which);
     } else if (event.type == SDL_EVENT_GAMEPAD_REMOVED) {
