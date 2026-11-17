@@ -192,7 +192,7 @@ static void cartridge_ReadHeader(const byte* header) {
     cartridge_pokey440 = (header[53] & 0x04) ? true : false;
     cartridge_pokey800 = (header[53] & 0x80) ? true : false;
     byte typeByte = header[54] & ~0x40;
-    // Only Absolute (1) and Activision (2) are supported in byte 53; other bits
+    // Only Activision (1) and Absolute (2) are supported in byte 53; other bits
     // (YM2151, Souper, banksets...) are ignored so the cart still boots.
     byte mapperByte = (header[53] == 1 || header[53] == 2 || header[53] == 0x10) ? header[53] : 0;
     // SuperGame carts have a power-of-two bank count, except the 9-bank (144K) layout
@@ -224,10 +224,10 @@ static void cartridge_ReadHeader(const byte* header) {
     }
     else {
         if (mapperByte == 1) {
-            cartridge_type = CARTRIDGE_TYPE_ABSOLUTE;
+            cartridge_type = CARTRIDGE_TYPE_ACTIVISION;
         }
         else if (mapperByte == 2) {
-            cartridge_type = CARTRIDGE_TYPE_ACTIVISION;
+            cartridge_type = CARTRIDGE_TYPE_ABSOLUTE;
         }
         else if (mapperByte == 0x10) {
             cartridge_type = CARTRIDGE_TYPE_SOUPER;
