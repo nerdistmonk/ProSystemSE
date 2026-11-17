@@ -265,11 +265,6 @@ bool prosystem_Load(const std::string filename) {
 
     offset += 4;  
 
-    prosystem_Reset();  
-    // A saved state is taken after the BIOS has handed off, so map the cartridge.
-    bios_waiting = false;  
-    cartridge_Store();  
-
     char digest[33] = {0};  
     for (index = 0; index < 32; index++) {  
         digest[index] = buffer[offset + index];  
@@ -278,6 +273,19 @@ bool prosystem_Load(const std::string filename) {
     if (cartridge_digest != std::string(digest)) {  
         return false;  
     }  
+    // Validate everything before touching the running system, so a wrong or
+    // corrupt state file doesn't reset the game.
+    if (cartridge_type == CARTRIDGE_TYPE_SUPERCART_RAM && size != 32829) {
+        return false;
+    }
+    if (cartridge_type == CARTRIDGE_TYPE_SOUPER && size != PRO_SYSTEM_STATE_MAX_SIZE) {
+        return false;
+    }
+
+    prosystem_Reset();  
+    // A saved state is taken after the BIOS has handed off, so map the cartridge.
+    bios_waiting = false;  
+    cartridge_Store();  
 
     sally_a = buffer[offset++];  
     sally_x = buffer[offset++];  
@@ -295,18 +303,12 @@ bool prosystem_Load(const std::string filename) {
     offset += 16384;  
 
     if (cartridge_type == CARTRIDGE_TYPE_SUPERCART_RAM) {  
-        if (size != 32829) {  
-            return false;  
-        }  
         for (index = 0; index < 16384; index++) {  
             memory_ram[16384 + index] = buffer[offset + index];  
         }  
         offset += 16384;   
     }   
     else if (cartridge_type == CARTRIDGE_TYPE_SOUPER) {  
-        if (size != PRO_SYSTEM_STATE_MAX_SIZE) {  
-            return false;  
-        }  
         cartridge_souper_chr_bank[0] = buffer[offset++];  
         cartridge_souper_chr_bank[1] = buffer[offset++];  
         cartridge_souper_mode = buffer[offset++];  
