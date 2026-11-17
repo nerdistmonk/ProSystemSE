@@ -951,6 +951,152 @@ void sally_Reset( ) {
 }
 
 // ----------------------------------------------------------------------------
+// Undocumented opcodes. Returns false for opcodes that are not handled (JAM).
+// ----------------------------------------------------------------------------
+static void sally_ARR( ) {
+  byte data = sally_a & memory_Read(sally_address.w);
+  sally_a = (data >> 1) | ((sally_p & SALLY_FLAG.C) ? 0x80 : 0);
+  sally_Flags(sally_a);
+  sally_p &= ~(SALLY_FLAG.C | SALLY_FLAG.V);
+  if(sally_a & 0x40) {
+    sally_p |= SALLY_FLAG.C;
+  }
+  if(((sally_a >> 6) ^ (sally_a >> 5)) & 1) {
+    sally_p |= SALLY_FLAG.V;
+  }
+}
+
+static void sally_AXS( ) {
+  byte data = memory_Read(sally_address.w);
+  byte base = sally_a & sally_x;
+  sally_p &= ~SALLY_FLAG.C;
+  if(base >= data) {
+    sally_p |= SALLY_FLAG.C;
+  }
+  sally_x = base - data;
+  sally_Flags(sally_x);
+}
+
+static bool sally_Undocumented( ) {
+  switch(sally_opcode) {
+    case 0x3a: case 0x5a: case 0x7a: case 0xda: case 0xfa:
+      sally_cycles = 2;
+      return true;
+    case 0x80: case 0x82: case 0x89: case 0xc2: case 0xe2: case 0x8b: case 0xab:
+      sally_Immediate( );
+      sally_cycles = 2;
+      return true;
+    case 0x04: case 0x44: case 0x64:
+      sally_ZeroPage( );
+      sally_cycles = 3;
+      return true;
+    case 0x14: case 0x34: case 0x54: case 0x74: case 0xd4: case 0xf4:
+      sally_ZeroPageX( );
+      sally_cycles = 4;
+      return true;
+    case 0x0c:
+      sally_Absolute( );
+      sally_cycles = 4;
+      return true;
+    case 0x1c: case 0x3c: case 0x5c: case 0x7c: case 0xdc: case 0xfc:
+      sally_AbsoluteX( );
+      sally_cycles = 4;
+      sally_Delay(sally_x);
+      return true;
+    case 0x6b:
+      sally_Immediate( );
+      sally_ARR( );
+      sally_cycles = 2;
+      return true;
+    case 0xcb:
+      sally_Immediate( );
+      sally_AXS( );
+      sally_cycles = 2;
+      return true;
+    case 0xeb:
+      sally_Immediate( );
+      sally_SBC( );
+      sally_cycles = 2;
+      return true;
+    case 0x93:
+      sally_IndirectY( );
+      sally_cycles = 6;
+      return true;
+    case 0x9b: case 0x9f: case 0xbb:
+      sally_AbsoluteY( );
+      sally_cycles = 5;
+      return true;
+    case 0x9c: case 0x9e:
+      sally_AbsoluteX( );
+      sally_cycles = 5;
+      return true;
+  }
+
+  if((sally_opcode & 3) != 3) {
+    return false;
+  }
+
+  byte group = sally_opcode >> 5;
+  byte mode = (sally_opcode >> 2) & 7;
+  static const byte rmwCycles[8] = {8, 5, 0, 6, 8, 6, 7, 7};
+  static const byte loadCycles[8] = {6, 3, 0, 4, 5, 4, 4, 4};
+  static const byte storeCycles[8] = {6, 3, 0, 4, 0, 4, 0, 0};
+
+  switch(mode) {
+    case 0: sally_IndirectX( ); break;
+    case 1: sally_ZeroPage( ); break;
+    case 3: sally_Absolute( ); break;
+    case 4: sally_IndirectY( ); break;
+    case 5:
+      if(group == 4 || group == 5) {
+        sally_ZeroPageY( );
+      }
+      else {
+        sally_ZeroPageX( );
+      }
+      break;
+    case 6: sally_AbsoluteY( ); break;
+    case 7:
+      if(group == 5) {
+        sally_AbsoluteY( );
+      }
+      else {
+        sally_AbsoluteX( );
+      }
+      break;
+    default: return false;
+  }
+
+  switch(group) {
+    case 0: sally_ASL( ); sally_ORA( ); break;
+    case 1: sally_ROL( ); sally_AND( ); break;
+    case 2: sally_LSR( ); sally_EOR( ); break;
+    case 3: sally_ROR( ); sally_ADC( ); break;
+    case 4: memory_Write(sally_address.w, sally_a & sally_x); break;
+    case 5:
+      sally_LDA( );
+      sally_x = sally_a;
+      break;
+    case 6: sally_DEC( ); sally_CMP( ); break;
+    case 7: sally_INC( ); sally_SBC( ); break;
+  }
+
+  if(group == 4) {
+    sally_cycles = storeCycles[mode];
+  }
+  else if(group == 5) {
+    sally_cycles = loadCycles[mode];
+    if(mode == 4 || mode == 6 || mode == 7) {
+      sally_Delay(sally_y);
+    }
+  }
+  else {
+    sally_cycles = rmwCycles[mode];
+  }
+  return true;
+}
+
+// ----------------------------------------------------------------------------
 // ExecuteInstruction
 // ----------------------------------------------------------------------------
 uint sally_ExecuteInstruction( ) {
@@ -1720,6 +1866,7 @@ uint sally_ExecuteInstruction( ) {
       break;
 
     default:
+      sally_Undocumented( );
       break;
   }
 
